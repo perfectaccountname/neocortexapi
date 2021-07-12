@@ -113,10 +113,10 @@ namespace NeoCortexApiSample
 
             inputValues = GetInputVectorFromFile(fileNames.First());
             double[] inputBitsOfTheSequence = inputValues.ToArray();
-            int maxCycles = 500;
+            int maxCycles = 300;
             int newbornCycle = 0;
 
-            HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, maxNumOfElementsInSequence * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
+            HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, maxNumOfElementsInSequence * 150, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
                 if (isStable)
                     // Event should be fired when entering the stable state.
@@ -180,7 +180,6 @@ namespace NeoCortexApiSample
 
                 List<string> lastPredictedValue = new List<string>();
 
-                //int maxCycles = 200;
                 int maxPrevInputs = inputValues.Count - 1;
                 List<string> previousInputs = new List<string>();
                 previousInputs.Add("-1.0");
@@ -338,8 +337,9 @@ namespace NeoCortexApiSample
                         }
                         maxMatchCnt = 0;
                     }
-                    Debug.WriteLine("------------ END ------------");
                 }
+                Debug.WriteLine("------------ END ------------");
+                previousInputs.Clear();
             }
 
             //To be developed: USER INPUT FOR PREDICTION
