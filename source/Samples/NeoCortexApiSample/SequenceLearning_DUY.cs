@@ -53,7 +53,7 @@ namespace NeoCortexApiSample
                 PermanenceIncrement = 0.15,
 
                 // Used by punishing of segments.
-                PredictedSegmentDecrement = 0.1
+
             };
 
             double max = 20;
@@ -90,10 +90,12 @@ namespace NeoCortexApiSample
         {
             //DIRECTORIES TO STORE INPUT AND OUTPUT FILES OF THE EXPERIMENT
             //----------------INPUT FILE PATH-----------------
-            string folderName = "MyInput";
+            string inputFolderName = "MyInput";
+            string testFolderName = "MyTest";
             //------------------------------------------------
 
-            string[] fileNames = Directory.GetFiles(folderName, "*", SearchOption.AllDirectories);
+            string[] inputFileNames = Directory.GetFiles(inputFolderName, "*", SearchOption.AllDirectories);
+            string[] testFileNames = Directory.GetFiles(testFolderName, "*", SearchOption.AllDirectories);
 
             var mem = new Connections(cfg);
 
@@ -109,11 +111,11 @@ namespace NeoCortexApiSample
 
             // The array of bits that represents the input vector.
             List<double> inputValues = new List<double>();
-            var maxNumOfElementsInSequence = GetMaxNumElementsFromAllSequences(folderName);
+            var maxNumOfElementsInSequence = GetMaxNumElementsFromAllSequences(inputFolderName);
 
-            inputValues = GetInputVectorFromFile(fileNames.First());
+            inputValues = GetInputVectorFromFile(inputFileNames.First());
             double[] inputBitsOfTheSequence = inputValues.ToArray();
-            int maxCycles = 300;
+            int maxCycles = 200;
             int newbornCycle = 0;
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, maxNumOfElementsInSequence * 150, (isStable, numPatterns, actColAvg, seenInputs) =>
@@ -161,9 +163,10 @@ namespace NeoCortexApiSample
                 if (isInStableState)
                     break;
             }
+
             layer1.HtmModules.Add("tm", tm);
 
-            foreach (var file in fileNames)
+            foreach (var file in inputFileNames)
             {
                 //inputValues.Add(GetInputVectorFromFile(file));
                 inputValues = GetInputVectorFromFile(file);
@@ -341,17 +344,80 @@ namespace NeoCortexApiSample
                 Debug.WriteLine("------------ END ------------");
                 previousInputs.Clear();
             }
-
-            //To be developed: USER INPUT FOR PREDICTION
-            learn = false;
-            var a = layer1.Compute(15, learn) as ComputeCycle;
-            var predictedValues = cls.GetPredictedInputValues(a.PredictiveCells.ToArray(), 3);
-            a = layer1.Compute(16, learn) as ComputeCycle;
-            predictedValues = cls.GetPredictedInputValues(a.PredictiveCells.ToArray(), 3);
+            foreach (var file in testFileNames)
+            {
+                Test(layer1, cls, file);
+            }
         }
 
         /// <summary>
-        /// Read all sequences in files contained in the folder and calculate th emaximum sequence length.
+        /// Read user input from console then predict the learned sequences.
+        /// </summary>
+        /// <param name="layer1">The developed cortex layer.</param>
+        /// <param name="cls">The learned classifier.</param>
+/*        private void Test(CortexLayer<object, object> layer1, HtmClassifier<string, ComputeCycle> cls)
+        {
+            Boolean isNumeric = false;
+            Console.WriteLine($"----------------User input test----------------");
+            string userInput = "";
+            do
+            {
+                Console.WriteLine($"----------------Please input a number to test, or input anything else to exit----------------");
+                userInput = Console.ReadLine();
+                isNumeric = int.TryParse(userInput, out _); 
+                if (isNumeric == false)
+                {
+                    break;
+                }
+                var lyrOut = layer1.Compute(userInput, false) as ComputeCycle;
+                var predictedValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 3);
+                foreach (var value in predictedValues)
+                {
+                    Debug.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
+                    Console.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
+                }
+            } while (isNumeric == true);
+        }*/
+
+        private void Test(CortexLayer<object, object> layer1, HtmClassifier<string, ComputeCycle> cls, string file)
+        {
+            List<double> userInputs = new List<double>();
+            Console.WriteLine($"----------------User input test----------------");
+            using (StreamReader sr = new StreamReader(file))
+            {
+                List<string> listValues = new List<string>();
+                while (!sr.EndOfStream)
+                {
+                    var line = sr.ReadLine();
+                    var values = line.Split(',');
+
+                    listValues.Add(values[1]);
+                }
+                foreach (var input in listValues)
+                {
+                    userInputs.Add(double.Parse(input, CultureInfo.InvariantCulture));
+                }
+            }
+            foreach (var userInput in userInputs)
+            {
+                Debug.WriteLine($"----------------User input is: {userInput}----------------");
+                Console.WriteLine($"----------------User input is: {userInput}----------------");
+                var lyrOut = layer1.Compute(userInput, false) as ComputeCycle;
+                var predictedValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 3);
+                foreach (var value in predictedValues)
+                {
+                    Debug.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
+                    Console.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
+                }
+                Debug.WriteLine($"-----------------------------------");
+                Console.WriteLine($"-----------------------------------");
+                Debug.WriteLine($"----------------END----------------");
+                Console.WriteLine($"----------------END----------------");
+            }
+        }
+
+        /// <summary>
+        /// Read all sequences in files contained in the folder and calculate the maximum sequence length.
         /// </summary>
         /// <param name="folder">The folder that holds sequences used for learning.</param>
         /// <returns>The maximum number of elements in all sequences in the folder.</returns>
@@ -373,6 +439,11 @@ namespace NeoCortexApiSample
             return maxNumOfElementsInSequence;
         }
 
+        /// <summary>
+        /// Run through a csv file and return the 2nd column's value as a list
+        /// </summary>
+        /// <param name="file">The file that holds sequences used for learning.</param>
+        /// <returns>The list of values from the file.</returns>
         private List<double> GetInputVectorFromFile(string file)
         {
             Debug.WriteLine($"----------------Running file's name: {file}----------------");
