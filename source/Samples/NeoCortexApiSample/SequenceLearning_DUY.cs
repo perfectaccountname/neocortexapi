@@ -111,6 +111,7 @@ namespace NeoCortexApiSample
 
             // The array of bits that represents the input vector.
             List<double> inputValues = new List<double>();
+            List<double[]> inputLists = new List<double[]>();
             var maxNumOfElementsInSequence = GetMaxNumElementsFromAllSequences(inputFolderName);
 
             inputValues = GetInputVectorFromFile(inputFileNames.First());
@@ -176,6 +177,35 @@ namespace NeoCortexApiSample
                 Stopwatch sw = new Stopwatch();
 
                 inputBitsOfTheSequence = inputValues.ToArray();
+                inputLists.Add(inputBitsOfTheSequence);
+
+/*                List<double[]> testLists = new List<double[]>();
+                List<string> stringTestLists = new List<string>();
+                foreach (var inputList in inputLists)
+                {
+                    for (var i = 0; i < inputList.Length; i++)
+                    {
+                        if (inputList[i] == 16)
+                        {
+                            double[] tmp = new double[inputList.Length];
+                            for (var x = 0; x < inputList.Length; x++)
+                            {
+                                tmp[(x + inputList.Length + (inputList.Length - i - 2) % inputList.Length) % tmp.Length] = inputList[x];
+                            }
+                            Debug.WriteLine($"----------------Predicted value number {tmp}----------------");
+                            testLists.Add(tmp);
+                        }
+                    }
+                    foreach (var item in testLists)
+                    {
+                        foreach (var a in item)
+                        {
+                            stringTestLists.Add(a.ToString());
+                        }
+                        string key = GetKey(stringTestLists, 0);
+                    }
+                }*/
+
                 int[] prevActiveCols = new int[0];
 
                 int cycle = 0;
@@ -346,7 +376,7 @@ namespace NeoCortexApiSample
             }
             foreach (var file in testFileNames)
             {
-                Test(layer1, cls, file);
+                Test(layer1, cls, file, inputLists);
             }
         }
 
@@ -355,31 +385,7 @@ namespace NeoCortexApiSample
         /// </summary>
         /// <param name="layer1">The developed cortex layer.</param>
         /// <param name="cls">The learned classifier.</param>
-/*        private void Test(CortexLayer<object, object> layer1, HtmClassifier<string, ComputeCycle> cls)
-        {
-            Boolean isNumeric = false;
-            Console.WriteLine($"----------------User input test----------------");
-            string userInput = "";
-            do
-            {
-                Console.WriteLine($"----------------Please input a number to test, or input anything else to exit----------------");
-                userInput = Console.ReadLine();
-                isNumeric = int.TryParse(userInput, out _); 
-                if (isNumeric == false)
-                {
-                    break;
-                }
-                var lyrOut = layer1.Compute(userInput, false) as ComputeCycle;
-                var predictedValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 3);
-                foreach (var value in predictedValues)
-                {
-                    Debug.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
-                    Console.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
-                }
-            } while (isNumeric == true);
-        }*/
-
-        private void Test(CortexLayer<object, object> layer1, HtmClassifier<string, ComputeCycle> cls, string file)
+        private void Test(CortexLayer<object, object> layer1, HtmClassifier<string, ComputeCycle> cls, string file, List<double[]> inputLists)
         {
             List<double> userInputs = new List<double>();
             Console.WriteLine($"----------------User input test----------------");
@@ -402,13 +408,49 @@ namespace NeoCortexApiSample
             {
                 Debug.WriteLine($"----------------User input is: {userInput}----------------");
                 Console.WriteLine($"----------------User input is: {userInput}----------------");
+                List<double[]> testLists = new List<double[]>();
+                List<string> stringTestLists = new List<string>();
                 var lyrOut = layer1.Compute(userInput, false) as ComputeCycle;
-                var predictedValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 3);
-                foreach (var value in predictedValues)
+                var predictedValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 8);
+                foreach (var inputList in inputLists)
                 {
-                    Debug.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
-                    Console.WriteLine($"----------------Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----------------");
+                    for (var i = 0; i < inputList.Length; i++)
+                    {
+                        if (inputList[i] == userInput)
+                        {
+                            double[] tmp = new double[inputList.Length];
+                            for (var x = 0; x < inputList.Length; x++)
+                            {
+                                tmp[(x + inputList.Length + (inputList.Length - i - 2) % inputList.Length) % tmp.Length] = inputList[x];
+                            }
+                            testLists.Add(tmp);
+                        }
+                    }
                 }
+                foreach (var list in testLists)
+                {
+                    foreach (var item in list)
+                    {
+                        stringTestLists.Add(item.ToString());
+                    }
+                    string key = GetKey(stringTestLists, 0);
+                    foreach (var value in predictedValues)
+                    {
+                        if (value.PredictedInput.Equals(key))
+                        {
+                            Debug.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
+                            Console.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
+                            Debug.WriteLine($"----------------Similarity: {value.Similarity}----------------");
+                            Console.WriteLine($"----------------Similarity: {value.Similarity}----------------");
+                            Debug.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
+                            Console.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
+                        }
+                    }
+                    key = string.Empty;
+                    stringTestLists.Clear();
+                }
+                predictedValues.Clear();
+                testLists.Clear();
                 Debug.WriteLine($"-----------------------------------");
                 Console.WriteLine($"-----------------------------------");
                 Debug.WriteLine($"----------------END----------------");
