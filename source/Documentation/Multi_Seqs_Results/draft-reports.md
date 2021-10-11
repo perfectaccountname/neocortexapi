@@ -1,6 +1,3 @@
-TODO: Test with longer sequence(s)
-TODO: Clean up the code
-
 # Requirements:
 
 1.	Extend the experiment to learn the single sequence with Reset()
@@ -13,110 +10,52 @@ TODO: Clean up the code
 
 ## Aproach/Criterias
 
-The single sequences tested:
-(For single sequence)
+The tested sequences:
+1st sequence: { 16.0, 17.0, 18.0, 19.0, 20.0, 19.0, 18.0, 17.0, 16.0, 15.0, 16.0, 17.0 }
+2nd sequence: { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 19.0, 18.0, 17.0, 16.0, 15.0, 16.0, 17.0 }
 
-The multi-sequences tested:
-{ 6.0, 7.0, 9.0, 10.0 }
-{ 15.0, 5.0, 3.0, 4.0, 20.0, 3.0, 5.0 }
+Each sequence is put into Temporal Memory (TM) to learn. With any number in the sequence used as an input, the TM should predict the correct sequence from the number after the input number up to the number before the input number.
+
+There will be two runs. One run resets the Temporal Memory every cycle while the other does not. A cycle is complete when the TM learns and predicts each number in a sequence. There will be many repeated cycles for the learning process.
+
+The results of two runs will be compared to determined if with reset or without reset is preferable.
 
 ### Without Reset:
-1. Cycle: 3500
-2. Accuracy: accuracy = matches/input length*100.0.
-3. maxstabilitycycles: The longest number of times it reaches 100% accuracy consecutively
-4. instabilitycycles: Number of instabilities
-5. minstabilitycycles: shortest muber of cstable cycles.
+1. Number of cycles: 1000.
+2. Accuracy: accuracy = matches/input length*100.0. With matches are the number of times the predicted sequence matches with the expected sequence and input length is the lenght of the sequence.
+3. Stable areas: Every cycle with accuracy of 100% is saved. The consercutive cycles with accuracy of 100% are called a stable area. There could be more than one stable area. It is preferable to have a long stable area which indicates that learning is complete.
 
-#### Example1
+#### Example1: "+" means accuracy of 100%, "*" means accuracy < 100%
 "****************++++++++"
 
-longest=7
-Number of instabilities=0
-Shortest=0
+Number of stable areas: 1
+Stable area no. 1's size: 8
 
 #### Example2
 "****************++++++++*****++++"
 
-longest=7
-Number of instabilities=1
-Shortest=5
- 
-#### Example3
-"****************++++++++*****++++**++*++"
+Number of stable areas: 2
+Stable area no. 1's size: 8
+Stable area no. 2's size: 4
 
-longest=7
-Number of instabilities=3
-Shortest=1
-
-## Elapsed time.
-NOTE on point 3 and 4: These are for requirement number 4. maxMatchCnt should be greater than the second longest number of times.
-Which means it will be in the stable area of the longest number of times.
-
-With Reset:
-Same as above except point 2.
+### With Reset:
+1. Number of cycles: same as without reset.
 2. Accuracy: accuracy = matches/(input length - 1)*100.0.
-Reason: Reset makes the first prediction to be always incorrect.
-=> Easier to be counted as 100% due to this limitation.
+Reason: Reseting the TM every cycle makes the first prediction to be always incorrect.
+3. Stable areas: same as without reset.
 
 ## Results
 
-### Single sequence w/wo Reset
+Please refer to the result files at neocortexapi/source/Documentation/Multi_Seqs_Results for detailed output.
 
 #### Without Reset 
-		Cycle: 3500	Matches=4 of 4	 100%
-		Elapsed time: 4 min.
-		Maximum number of consecutive 100% correct: 3409
-		Last correct cycle: 3500
-		Second longest number of consecutive 100% correct: 0
-#### With Reset 
-		Cycle: 3500	Matches=3 of 4	 100%
-		Elapsed time: 3 min.
-		Maximum number of consecutive 100% correct: 3493
-		Last correct cycle: 3500
-		Second longest number of consecutive 100% correct: 0
-		
-	Conclusion: There are some differences but seems small. Could be within margin of error. They look alike.
-	The second longest number is 0. Which means there is no need to set maxMatchCnt to be very big. Should test again with longer sequequences.
-
-### Multiple  sequences (two) w/wo Reset
-
-#### Without Reset
-
-**Sequence 1**
-
-Cycle: 3500	Matches=4 of 4	 100%
-Elapsed time: 5 min.
-Maximum number of consecutive 100% correct: 3384
-Last correct cycle: 3500
-Second longest number of consecutive 100% correct: 0
-
-**Sequence 2**
-Cycle: 3500	Matches=7 of 7	 100%
-Elapsed time: 6 min.
-Maximum number of consecutive 100% correct: 3001
-Last correct cycle: 3500
-Second longest number of consecutive 100% correct: 2
+		1st sequence: There are 8 stable areas. Most of them have an area of 1 (only 1 cycle with accuracy of 100%), which means these areas are not true stable areas and may be the result of lucky guess. The last stable area spans from cycle 373 to 1000 2hich indicates that TM has fully learned.
+		2nd sequence: There are 12 stable areas. Most of them have small size even near the end. The last stable area spans from cycle 999 to 1000 which indicates that TM has not fully learned. TM may become stable with more cycles but this shows that without reset has a slow learning rate.
 		
 #### With Reset 
-
-**Sequence 1**
-		
-Cycle: 3500	Matches=3 of 4	 100%
-Elapsed time: 3 min.
-Maximum number of consecutive 100% correct: 3493
-Last correct cycle: 3500
-Second longest number of consecutive 100% correct: 1
-
-**Sequence 2**
-
-Cycle: 3500	Matches=6 of 7	 100%
-Elapsed time: 6 min.
-Maximum number of consecutive 100% correct: 2961
-Last correct cycle: 3500
-Second longest number of consecutive 100% correct: 3
+		1st sequence: Only one atable areas spanning from cycle 40 up to 1000. The TM learns faster and more stable than without reset.
+		2nd sequence: Similar as above with one big stable area. Again, the TM learns faster than without reset.
 	
 ## Conclusion
   
-Reduced number of consecutive 100% on the second run => takes more time to re-learn?
-There are now some instable area (second longest number > 0) but still small => maxMatchCnt does not need to be a big number.
-With and without Reset still feel similar.
+With reseting the TM every learning cycle, the TM is able to learn faster than without reset.
