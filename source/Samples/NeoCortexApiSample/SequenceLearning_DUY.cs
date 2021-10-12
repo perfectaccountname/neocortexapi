@@ -24,6 +24,8 @@ namespace NeoCortexApiSample
     {
         public void Run()
         {
+            #region Parameters initialization for the experiment.
+
             Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(SequenceLearning_DUY)}");
 
             int inputBits = 100;
@@ -71,6 +73,7 @@ namespace NeoCortexApiSample
             };
 
             EncoderBase encoder = new ScalarEncoder(settings);
+            #endregion
 
             // not stable with 2048 cols 25 cells per column and 0.02 * numColumns synapses on segment.
             // Stable with permanence decrement 0.25/ increment 0.15 and ActivationThreshold 25.
@@ -88,6 +91,8 @@ namespace NeoCortexApiSample
         /// </summary>
         private void RunExperiment(int inputBits, HtmConfig cfg, EncoderBase encoder)
         {
+            #region Global variables for the experiment.
+
             //DIRECTORIES TO STORE INPUT AND OUTPUT FILES OF THE EXPERIMENT
             //----------------INPUT FILE PATH-----------------
             string inputFolderName = "MyInput";
@@ -118,6 +123,9 @@ namespace NeoCortexApiSample
             double[] inputBitsOfTheSequence = inputValues.ToArray();
             int maxCycles = 300;
             int newbornCycle = 0;
+            #endregion
+
+            #region Training SP to get stable. New-born stage.
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, maxNumOfElementsInSequence * 150, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
@@ -132,7 +140,7 @@ namespace NeoCortexApiSample
                 learn = isInStableState = isStable;
 
                 // Clear all learned patterns in the classifier.
-                cls.ClearState();
+                //cls.ClearState();
 
             }, numOfCyclesToWaitOnChange: 50);
 
@@ -166,10 +174,14 @@ namespace NeoCortexApiSample
             }
 
             layer1.HtmModules.Add("tm", tm);
+            #endregion
+
+            #region Training every file in MyInput folder.
 
             foreach (var file in inputFileNames)
             {
-                //inputValues.Add(GetInputVectorFromFile(file));
+                #region Variables for SP+TM training
+
                 inputValues = GetInputVectorFromFile(file);
 
                 List<int[]> stableAreas = new List<int[]>();
@@ -196,11 +208,14 @@ namespace NeoCortexApiSample
                 sw.Reset();
                 sw.Start();
                 int maxMatchCnt = 0;
+                #endregion
 
                 //
                 // Now training with SP+TM. SP is pretrained on the given input pattern set.
                 for (int i = 0; i < maxCycles; i++)
                 {
+                    #region Training with SP+TM for one cycle
+
                     matches = 0;
 
                     learn = true;
@@ -280,6 +295,9 @@ namespace NeoCortexApiSample
                             lastPredictedValue.Clear();
                         }
                     }
+                    #endregion
+
+                    #region Accuracy calculation after one cycle
 
                     double accuracy;
                     tm.Reset(mem);
@@ -318,15 +336,22 @@ namespace NeoCortexApiSample
                         }
                         maxMatchCnt = 0;
                     }
+                    #endregion
                 }
                 Debug.WriteLine("------------ END ------------");
                 previousInputs.Clear();
             }
+            #endregion
+
+            #region Prediction after training using user input in MyTest folder.
             foreach (var file in testFileNames)
             {
                 userInputPrediction(layer1, cls, file, inputLists);
             }
+            #endregion
         }
+
+        #region Various helping methods created for the experiment.
 
         /// <summary>
         /// Print the results after learning.
@@ -378,8 +403,12 @@ namespace NeoCortexApiSample
             }
             foreach (var userInput in userInputs)
             {
+                Debug.WriteLine($"                          ");
+                Console.WriteLine($"                          ");
                 Debug.WriteLine($"----------------User input is: {userInput}----------------");
                 Console.WriteLine($"----------------User input is: {userInput}----------------");
+                Debug.WriteLine($"                          ");
+                Console.WriteLine($"                          ");
                 List<double[]> testLists = new List<double[]>();
                 List<string> stringTestLists = new List<string>();
                 var lyrOut = layer1.Compute(userInput, false) as ComputeCycle;
@@ -423,10 +452,12 @@ namespace NeoCortexApiSample
                     predictedValues.Clear();
                 }
                 testLists.Clear();
-                Debug.WriteLine($"-----------------------------------");
-                Console.WriteLine($"-----------------------------------");
+                Debug.WriteLine($"                          ");
+                Console.WriteLine($"                          ");
                 Debug.WriteLine($"----------------END----------------");
                 Console.WriteLine($"----------------END----------------");
+                Debug.WriteLine($"                          ");
+                Console.WriteLine($"                          ");
             }
         }
 
@@ -513,5 +544,6 @@ namespace NeoCortexApiSample
 
             return key;
         }
+        #endregion
     }
 }
