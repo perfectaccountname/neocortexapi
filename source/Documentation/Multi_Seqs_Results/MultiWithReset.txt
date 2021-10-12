@@ -1,0 +1,17 @@
+FIRST SEQUENCE
+100% accuracy reached 960 times.
+Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: 17 min.
+----------------Stable area number: 0----------------
+Starting cycle: 40
+Ending cycle: 1000
+Stable area's size: 961
+----------------End of Stable area number: 0----------------
+
+SECOND SEQUENCE
+100% accuracy reached 882 times.
+Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: 22 min.
+----------------Stable area number: 0----------------
+Starting cycle: 118
+Ending cycle: 1000
+Stable area's size: 883
+----------------End of Stable area number: 0----------------

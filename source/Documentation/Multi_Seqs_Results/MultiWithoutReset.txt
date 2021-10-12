@@ -1,16 +1,134 @@
-Cycle: 3500	Matches=4 of 4	 100%
-100% accuracy reached 3384 times.
-Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: 5 min.
-Maximum number of consecutive 100% correct: 3384
-Last correct cycle: 3500
-Second longest number of consecutive 100% correct: 0
------------- END ------------
+Cycle: 1000	Matches=32 of 32	 100%
+100% accuracy reached 1 times.
+Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: 19 min.
+----------------Stable area number: 0----------------
+Starting cycle: 402
+Ending cycle: 402
+Stable area's size: 0
+----------------End of Stable area number: 0----------------
 
-Cycle: 3500	Matches=7 of 7	 100%
-100% accuracy reached 3001 times.
-Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: 6 min.
-Maximum number of consecutive 100% correct: 3001
-Last correct cycle: 3500
-Second longest number of consecutive 100% correct: 2
+----------------Stable area number: 1----------------
+Starting cycle: 505
+Ending cycle: 505
+Stable area's size: 0
+----------------End of Stable area number: 1----------------
+
+----------------Stable area number: 2----------------
+Starting cycle: 554
+Ending cycle: 559
+Stable area's size: 5
+----------------End of Stable area number: 2----------------
+
+----------------Stable area number: 3----------------
+Starting cycle: 617
+Ending cycle: 617
+Stable area's size: 0
+----------------End of Stable area number: 3----------------
+
+----------------Stable area number: 4----------------
+Starting cycle: 666
+Ending cycle: 671
+Stable area's size: 5
+----------------End of Stable area number: 4----------------
+
+----------------Stable area number: 5----------------
+Starting cycle: 726
+Ending cycle: 726
+Stable area's size: 0
+----------------End of Stable area number: 5----------------
+----------------Stable area number: 6----------------
+Starting cycle: 775
+Ending cycle: 780
+Stable area's size: 5
+----------------End of Stable area number: 6----------------
+----------------Stable area number: 7----------------
+Starting cycle: 835
+Ending cycle: 835
+Stable area's size: 0
+----------------End of Stable area number: 7----------------
+----------------Stable area number: 8----------------
+Starting cycle: 860
+Ending cycle: 860
+Stable area's size: 0
+----------------End of Stable area number: 8----------------
+----------------Stable area number: 9----------------
+Starting cycle: 879
+Ending cycle: 884
+Stable area's size: 5
+----------------End of Stable area number: 9----------------
+----------------Stable area number: 10----------------
+Starting cycle: 939
+Ending cycle: 939
+Stable area's size: 0
+----------------End of Stable area number: 10----------------
+----------------Stable area number: 11----------------
+Starting cycle: 988
+Ending cycle: 993
+Stable area's size: 5
+----------------End of Stable area number: 11----------------
+----------------Stable area number: 12----------------
+Starting cycle: 999
+Ending cycle: 1000
+Stable area's size: 1
+----------------End of Stable area number: 12----------------
+
+
+
+Cycle: 1000	Matches=12 of 12	 100%
+100% accuracy reached 627 times.
+Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: 13 min.
+----------------Stable area number: 0----------------
+Starting cycle: 74
+Ending cycle: 74
+Stable area's size: 0
+----------------End of Stable area number: 0----------------
+
+----------------Stable area number: 1----------------
+Starting cycle: 123
+Ending cycle: 123
+Stable area's size: 0
+----------------End of Stable area number: 1----------------
+
+----------------Stable area number: 2----------------
+Starting cycle: 165
+Ending cycle: 166
+Stable area's size: 1
+----------------End of Stable area number: 2----------------
+
+----------------Stable area number: 3----------------
+Starting cycle: 173
+Ending cycle: 173
+Stable area's size: 0
+----------------End of Stable area number: 3----------------
+
+----------------Stable area number: 4----------------
+Starting cycle: 225
+Ending cycle: 225
+Stable area's size: 0
+----------------End of Stable area number: 4----------------
+
+----------------Stable area number: 5----------------
+Starting cycle: 275
+Ending cycle: 275
+Stable area's size: 0
+----------------End of Stable area number: 5----------------
+
+----------------Stable area number: 6----------------
+Starting cycle: 318
+Ending cycle: 319
+Stable area's size: 1
+----------------End of Stable area number: 6----------------
+
+----------------Stable area number: 7----------------
+Starting cycle: 329
+Ending cycle: 329
+Stable area's size: 0
+----------------End of Stable area number: 7----------------
+
+----------------Stable area number: 8----------------
+Starting cycle: 373
+Ending cycle: 1000
+Stable area's size: 627
+----------------End of Stable area number: 8----------------
 ------------ END ------------
-The program '[25940] NeoCortexApiSample.exe' has exited with code 0 (0x0).
+The program '[19752] NeoCortexApiSample.exe' has exited with code 0 (0x0).
