@@ -6,7 +6,8 @@
 	c.	Compare output.
 2.	Play with the exit  condition for the stable TM
   if (maxMatchCnt >= 30)
-3.	Try to learn multiple sequences
+3.	Try to learn multiple sequences.
+4.	User can input numbers for prediction after learning.
 
 ## Aproach/Criterias
 
@@ -14,11 +15,15 @@ The tested sequences:
 1st sequence: { 16.0, 17.0, 18.0, 19.0, 20.0, 19.0, 18.0, 17.0, 16.0, 15.0, 16.0, 17.0 }
 2nd sequence: { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 19.0, 18.0, 17.0, 16.0, 15.0, 16.0, 17.0 }
 
-Each sequence is put into Temporal Memory (TM) to learn. With any number in the sequence used as an input, the TM should predict the correct sequence from the number after the input number up to the number before the input number.
+Each sequence is put inside a .csv file which is inside MyInput folder. The sequence(s) will be extracted by the program and will be put into Temporal Memory (TM) to learn.
+
+The expected result is with any number in the sequence used as an input, the TM should predict the correct sequence from the number after the input number up to the number before the input number.
 
 There will be two runs. One run resets the Temporal Memory every cycle while the other does not. A cycle is complete when the TM learns and predicts each number in a sequence. There will be many repeated cycles for the learning process.
 
 The results of two runs will be compared to determined if with reset or without reset is preferable.
+
+After learning, user can input their own numbers for prediction by putting another .csv file in MyTest folder. The learned TM should predict the sequence after that number if any.
 
 ### Without Reset:
 1. Number of cycles: 1000.
@@ -31,7 +36,7 @@ The results of two runs will be compared to determined if with reset or without 
 Number of stable areas: 1
 Stable area no. 1's size: 8
 
-#### Example2
+#### Example2:
 "****************++++++++*****++++"
 
 Number of stable areas: 2
@@ -58,4 +63,4 @@ Please refer to the result files at neocortexapi/source/Documentation/Multi_Seqs
 	
 ## Conclusion
   
-With reseting the TM every learning cycle, the TM is able to learn faster than without reset.
+With reseting the TM every learning cycle, the TM is able to learn faster than without reset. With reset, the exit condition of maxMatchCnt >= 30 should be sufficient since the stable area is much larger than 30 and even if there are small, local stable areas, they are usually very small (<30 consercutive cycles).
