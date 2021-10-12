@@ -116,7 +116,7 @@ namespace NeoCortexApiSample
 
             inputValues = GetInputVectorFromFile(inputFileNames.First());
             double[] inputBitsOfTheSequence = inputValues.ToArray();
-            int maxCycles = 200;
+            int maxCycles = 300;
             int newbornCycle = 0;
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, maxNumOfElementsInSequence * 150, (isStable, numPatterns, actColAvg, seenInputs) =>
@@ -179,33 +179,6 @@ namespace NeoCortexApiSample
                 inputBitsOfTheSequence = inputValues.ToArray();
                 inputLists.Add(inputBitsOfTheSequence);
 
-/*                List<double[]> testLists = new List<double[]>();
-                List<string> stringTestLists = new List<string>();
-                foreach (var inputList in inputLists)
-                {
-                    for (var i = 0; i < inputList.Length; i++)
-                    {
-                        if (inputList[i] == 16)
-                        {
-                            double[] tmp = new double[inputList.Length];
-                            for (var x = 0; x < inputList.Length; x++)
-                            {
-                                tmp[(x + inputList.Length + (inputList.Length - i - 2) % inputList.Length) % tmp.Length] = inputList[x];
-                            }
-                            Debug.WriteLine($"----------------Predicted value number {tmp}----------------");
-                            testLists.Add(tmp);
-                        }
-                    }
-                    foreach (var item in testLists)
-                    {
-                        foreach (var a in item)
-                        {
-                            stringTestLists.Add(a.ToString());
-                        }
-                        string key = GetKey(stringTestLists, 0);
-                    }
-                }*/
-
                 int[] prevActiveCols = new int[0];
 
                 int cycle = 0;
@@ -215,7 +188,7 @@ namespace NeoCortexApiSample
 
                 int maxPrevInputs = inputValues.Count - 1;
                 List<string> previousInputs = new List<string>();
-                previousInputs.Add("-1.0");
+                //previousInputs.Add("-1.0");
 
                 stableAreas.Clear();
                 cycle = 0;
@@ -223,11 +196,14 @@ namespace NeoCortexApiSample
                 sw.Reset();
                 sw.Start();
                 int maxMatchCnt = 0;
+
                 //
                 // Now training with SP+TM. SP is pretrained on the given input pattern set.
                 for (int i = 0; i < maxCycles; i++)
                 {
                     matches = 0;
+
+                    learn = true;
 
                     cycle++;
 
@@ -251,7 +227,7 @@ namespace NeoCortexApiSample
                         // Which will result in returning of 4-5-6 instead of 1-2-3-4-5-6.
                         // HtmClassifier allways return the first matching sequence. Because 4-5-6 will be as first
                         // memorized, it will match as the first one.
-                        if (previousInputs.Count < maxPrevInputs)
+                        if (previousInputs.Count <= maxPrevInputs)
                             continue;
 
                         string key = GetKey(previousInputs, input);
@@ -290,7 +266,7 @@ namespace NeoCortexApiSample
                         if (lyrOut.PredictiveCells.Count > 0)
                         {
                             //var predictedInputValue = cls.GetPredictedInputValue(lyrOut.PredictiveCells.ToArray());
-                            var predictedInputValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 3);
+                            var predictedInputValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 6);
 
                             foreach (var item in predictedInputValues)
                             {
@@ -313,7 +289,7 @@ namespace NeoCortexApiSample
 
                     Debug.WriteLine($"Cycle: {cycle}\tMatches={matches} of {inputBitsOfTheSequence.Length}\t {accuracy}%");
 
-                    if (accuracy == 100.0)
+                    if (accuracy >= 100.0)
                     {
                         maxMatchCnt++;
                         Debug.WriteLine($"100% accuracy reached {maxMatchCnt} times.");
@@ -324,21 +300,7 @@ namespace NeoCortexApiSample
                         {
                             stableAreas.Add(new int[] { cycle - maxMatchCnt, cycle });
                             sw.Stop();
-                            Debug.WriteLine($"Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: {sw.ElapsedMilliseconds / 1000 / 60} min.");
-                            Console.WriteLine($"Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: {sw.ElapsedMilliseconds / 1000 / 60} min.");
-                            foreach (int[] stableArea in stableAreas)
-                            {
-                                Debug.WriteLine($"----------------Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                                Console.WriteLine($"----------------Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                                Debug.WriteLine($"Starting cycle: {stableArea.Min()}");
-                                Console.WriteLine($"Starting cycle: {stableArea.Min()}");
-                                Debug.WriteLine($"Ending cycle: {stableArea.Max()}");
-                                Console.WriteLine($"Ending cycle: {stableArea.Max()}");
-                                Debug.WriteLine($"Stable area's size: {stableArea.Max() - stableArea.Min()}");
-                                Console.WriteLine($"Stable area's size: {stableArea.Max() - stableArea.Min()}");
-                                Debug.WriteLine($"----------------End of Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                                Console.WriteLine($"----------------End of Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                            }
+                            printResults(stableAreas, sw);
                             learn = false;
                             break;
                         }
@@ -350,21 +312,7 @@ namespace NeoCortexApiSample
                         if (cycle == maxCycles)
                         {
                             sw.Stop();
-                            Debug.WriteLine($"Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: {sw.ElapsedMilliseconds / 1000 / 60} min.");
-                            Console.WriteLine($"Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: {sw.ElapsedMilliseconds / 1000 / 60} min.");
-                            foreach (int[] stableArea in stableAreas)
-                            {
-                                Debug.WriteLine($"----------------Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                                Console.WriteLine($"----------------Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                                Debug.WriteLine($"Starting cycle: {stableArea.Min()}");
-                                Console.WriteLine($"Starting cycle: {stableArea.Min()}");
-                                Debug.WriteLine($"Ending cycle: {stableArea.Max()}");
-                                Console.WriteLine($"Ending cycle: {stableArea.Max()}");
-                                Debug.WriteLine($"Stable area's size: {stableArea.Max() - stableArea.Min()}");
-                                Console.WriteLine($"Stable area's size: {stableArea.Max() - stableArea.Min()}");
-                                Debug.WriteLine($"----------------End of Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                                Console.WriteLine($"----------------End of Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
-                            }
+                            printResults(stableAreas, sw);
                             learn = false;
                             break;
                         }
@@ -376,7 +324,31 @@ namespace NeoCortexApiSample
             }
             foreach (var file in testFileNames)
             {
-                Test(layer1, cls, file, inputLists);
+                userInputPrediction(layer1, cls, file, inputLists);
+            }
+        }
+
+        /// <summary>
+        /// Print the results after learning.
+        /// </summary>
+        /// <param name="stableAreas">List of stable areas.</param>
+        /// <param name="sw">Stop watch.</param>
+        private static void printResults(List<int[]> stableAreas, Stopwatch sw)
+        {
+            Debug.WriteLine($"Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: {sw.ElapsedMilliseconds / 1000 / 60} min.");
+            Console.WriteLine($"Exit experiment in the stable state after 30 repeats with 100% of accuracy. Elapsed time: {sw.ElapsedMilliseconds / 1000 / 60} min.");
+            foreach (int[] stableArea in stableAreas)
+            {
+                Debug.WriteLine($"----------------Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
+                Console.WriteLine($"----------------Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
+                Debug.WriteLine($"Starting cycle: {stableArea.Min()}");
+                Console.WriteLine($"Starting cycle: {stableArea.Min()}");
+                Debug.WriteLine($"Ending cycle: {stableArea.Max()}");
+                Console.WriteLine($"Ending cycle: {stableArea.Max()}");
+                Debug.WriteLine($"Stable area's size: {stableArea.Max() - stableArea.Min()}");
+                Console.WriteLine($"Stable area's size: {stableArea.Max() - stableArea.Min()}");
+                Debug.WriteLine($"----------------End of Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
+                Console.WriteLine($"----------------End of Stable area number: {stableAreas.IndexOf(stableArea)}----------------");
             }
         }
 
@@ -385,7 +357,7 @@ namespace NeoCortexApiSample
         /// </summary>
         /// <param name="layer1">The developed cortex layer.</param>
         /// <param name="cls">The learned classifier.</param>
-        private void Test(CortexLayer<object, object> layer1, HtmClassifier<string, ComputeCycle> cls, string file, List<double[]> inputLists)
+        private void userInputPrediction(CortexLayer<object, object> layer1, HtmClassifier<string, ComputeCycle> cls, string file, List<double[]> inputLists)
         {
             List<double> userInputs = new List<double>();
             Console.WriteLine($"----------------User input test----------------");
@@ -411,51 +383,67 @@ namespace NeoCortexApiSample
                 List<double[]> testLists = new List<double[]>();
                 List<string> stringTestLists = new List<string>();
                 var lyrOut = layer1.Compute(userInput, false) as ComputeCycle;
-                var predictedValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 8);
-                foreach (var inputList in inputLists)
+                if (lyrOut.PredictiveCells.Count > 0)
                 {
-                    for (var i = 0; i < inputList.Length; i++)
+                    var predictedValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 6);
+                    foreach (var inputList in inputLists)
                     {
-                        if (inputList[i] == userInput)
+                        for (var i = 0; i < inputList.Length; i++)
                         {
-                            double[] tmp = new double[inputList.Length];
-                            for (var x = 0; x < inputList.Length; x++)
+                            if (inputList[i] == userInput)
                             {
-                                tmp[(x + inputList.Length + (inputList.Length - i - 2) % inputList.Length) % tmp.Length] = inputList[x];
+                                double[] tmp = new double[inputList.Length];
+                                for (var x = 0; x < inputList.Length; x++)
+                                {
+                                    tmp[(x + inputList.Length + (inputList.Length - i - 2) % inputList.Length) % tmp.Length] = inputList[x];
+                                }
+                                testLists.Add(tmp);
                             }
-                            testLists.Add(tmp);
                         }
                     }
-                }
-                foreach (var list in testLists)
-                {
-                    foreach (var item in list)
+                    foreach (var list in testLists)
                     {
-                        stringTestLists.Add(item.ToString());
-                    }
-                    string key = GetKey(stringTestLists, 0);
-                    foreach (var value in predictedValues)
-                    {
-                        if (value.PredictedInput.Equals(key))
+                        foreach (var item in list)
                         {
-                            Debug.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
-                            Console.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
-                            Debug.WriteLine($"----------------Similarity: {value.Similarity}----------------");
-                            Console.WriteLine($"----------------Similarity: {value.Similarity}----------------");
-                            Debug.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
-                            Console.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
+                            stringTestLists.Add(item.ToString());
                         }
+                        string key = GetKey(stringTestLists, 0);
+                        foreach (var value in predictedValues)
+                        {
+                            Debug.WriteLine($"                          ");
+                            Console.WriteLine($"                          ");
+
+                            printUserInputResults(predictedValues, value);
+
+                            Debug.WriteLine($"                          ");
+                            Console.WriteLine($"                          ");
+                        }
+                        stringTestLists.Clear();
                     }
-                    key = string.Empty;
-                    stringTestLists.Clear();
+                    predictedValues.Clear();
                 }
-                predictedValues.Clear();
                 testLists.Clear();
                 Debug.WriteLine($"-----------------------------------");
                 Console.WriteLine($"-----------------------------------");
                 Debug.WriteLine($"----------------END----------------");
                 Console.WriteLine($"----------------END----------------");
             }
+        }
+
+        /// <summary>
+        /// Print the results after user inputs a number.
+        /// </summary>
+        /// <param name="predictedValues">The predicted values.</param>
+        /// /// <param name="value">One value in the predicted values.</param>
+        /// <returns>The maximum number of elements in all sequences in the folder.</returns>
+        private static void printUserInputResults(List<HtmClassifier<string, ComputeCycle>.ClassifierResult> predictedValues, HtmClassifier<string, ComputeCycle>.ClassifierResult value)
+        {
+            Debug.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
+            Console.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
+            Debug.WriteLine($"----------------Similarity: {value.Similarity}----------------");
+            Console.WriteLine($"----------------Similarity: {value.Similarity}----------------");
+            Debug.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
+            Console.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
         }
 
         /// <summary>
