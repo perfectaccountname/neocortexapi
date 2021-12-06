@@ -1,4 +1,8 @@
-# Requirements:
+# Individual Project - Sequence Learning with Reset
+# Author: Duy Thanh Nguyen - 1067783
+# Examiner: Prof. Dr. Andreas Pech
+
+## Requirements:
 
 1.	Extend the experiment to learn the single sequence with Reset()
 	a.	Take few sequences and learn as it is now, without Reset(). Trace out results.
