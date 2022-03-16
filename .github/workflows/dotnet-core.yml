@@ -13,14 +13,16 @@ jobs:
       run:
         working-directory: ${{env.WrkDir}}
     env: 
-      WrkDir: ./NeoCortexApi
+      WrkDir: ./source
       MainSln: NeoCortexApi.All.sln
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: |
+            5.0.x
+            6.0.x
       
       - name: Install dependencies
         run: dotnet restore ${{env.MainSln}}

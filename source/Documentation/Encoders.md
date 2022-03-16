@@ -33,7 +33,9 @@ public Dictionary<string, object> GetDefaultEncoderSettings()
 | `Periodic`   | boolean   | If true, then the input value “wraps around” such that `Minval` = `Maxval`. For a periodic value, the input must be strictly less than `Maxval`, otherwise `Maxval` is a true upper bound.                                                |
 | `ClipInput`  | boolean   | if true, non-periodic inputs smaller than minval or greater than maxval will be clipped to minval/maxval                                                                                                                                  |
 
-The following code snippet intialize an encoder using method `GetDefaultEncoderSettings()`
+The following section demonstrate how to use an encoder.
+
+To initialize an encoder, use the code snippet with method `GetDefaultEncoderSettings()`
 
 ```cs
 ScalarEncoder encoder = new ScalarEncoder(GetDefautEncoderSettings());
@@ -53,7 +55,7 @@ double input = 99.50;
 int[] result = encoder.Encode(input);
 ```
 
-With the encoder settings below:
+The default encoder settings is summarized as follow:
 
 | Parameter    | Data type | Definition |
 | ------------ | --------- | ---------- |
@@ -66,7 +68,7 @@ With the encoder settings below:
 | `Periodic`   | boolean   | true       |
 | `ClipInput`  | boolean   | true       |
 
-The output result will look as follow:
+The `ScalarEncoder` encodes number 99.6 and produces the following output with the previous encoder settings.
 
 ```
 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1
@@ -109,7 +111,7 @@ public void TestCategoryEncoderWithInputArrayOfSizeFourDefaultSettings()
 
 ```
 
-Further unit tests can be found here: https://github.com/ddobric/neocortexapi/blob/master/NeoCortexApi/UnitTestsProject/EncoderTests/CategoryEncoderExperimentalTests.cs
+Further unit tests can be found [here](../UnitTestsProject/EncoderTests/CategoryEncoderExperimentalTests.cs)
 
 ### Datetime Encoder
 
@@ -153,6 +155,8 @@ Results|![][img05.07.2011] | ![][img06.07.2012] | ![][img07.07.2013] | ![][img08
 [img07.07.2013]: ./images/DateTimeEncoder/DateTime_out_07-07-2013%2021-58-07_32x32-N-1024-W-21.png
 [img08.07.2014]: ./images/DateTimeEncoder/DateTime_out_08-07-2014%2021-58-07_32x32-N-1024-W-21.png
 
+Further unit tests can be found [here](../UnitTestsProject/EncoderTests/DateTimeEncoderTests.cs)
+
 ### Geo-Spatial Encoder
 
 ```csharp
@@ -185,11 +189,11 @@ public int[] GermanyToItalyLongitude(double input)
 }
 ```
 
-Further unit tests can be found here: https://github.com/ddobric/neocortexapi/blob/master/NeoCortexApi/UnitTestsProject/EncoderTests/GeoSpatialEncoderExperimentalTests.cs
+Further unit tests can be found [here](../UnitTestsProject/EncoderTests/GeoSpatialEncoderExperimentalTests.cs)
 
 ### Multi-Encoder
 
-Further unit tests can be found here: https://github.com/ddobric/neocortexapi/blob/master/NeoCortexApi/UnitTestsProject/EncoderTests/MultiEncoderTests.cs
+Further unit tests can be found [here](../UnitTestsProject/EncoderTests/MultiEncoderTests.cs)
 
 ```csharp
 // Not Implemented
@@ -234,4 +238,27 @@ The following table visualizes the result from several numbers of the above unit
 [img17.6]: ./images/ScalarEncoder/17.6.png
 [img18.0]: ./images/ScalarEncoder/18.0.png
 
-Further unit tests can be found here: https://github.com/ddobric/neocortexapi/blob/master/NeoCortexApi/UnitTestsProject/EncoderTests/ScalarEncoderTests.cs
+Further unit tests can be found [here](../UnitTestsProject/EncoderTests/ScalarEncoderTests.cs)
+
+## How to create new Encoder?
+
+New encoder should extend `EncoderBase` class as follow:
+
+```cs
+{
+    public class BloodPressureEncoder : EncoderBase
+    {
+        public override int Width { get; }
+        public override bool IsDelta { get { return false; } }
+        public override int[] Encode(object inputData)
+        {
+            // Implementation of the blood pressure encoder
+            // Output is 1D array SDR
+        }
+        public override List<T> GetBucketValues<T>()
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+```

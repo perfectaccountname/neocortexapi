@@ -5,13 +5,10 @@ using NeoCortexApi.Encoders;
 using NeoCortexApi.Entities;
 using NeoCortexApi.Network;
 using NeoCortexApi.Utility;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UnitTestsProject.CortexNetworkTests
 {
@@ -49,7 +46,7 @@ namespace UnitTestsProject.CortexNetworkTests
                 LocalAreaDensity = -1,
                 NumActiveColumnsPerInhArea = 0.02 * numColumnsL4,
                 PotentialRadius = 50, // Every column is connected to 50 of 100 input cells.
-                InhibitionRadius = 15,
+                //InhibitionRadius = 15,
                 MaxBoost = maxBoost,
                 DutyCyclePeriod = 25,
                 MinPctOverlapDutyCycles = minOctOverlapCycles,
@@ -73,7 +70,6 @@ namespace UnitTestsProject.CortexNetworkTests
                 LocalAreaDensity = -1,
                 NumActiveColumnsPerInhArea = 0.21 * numColumnsL2,
                 PotentialRadius = inputsL2, // All columns
-                InhibitionRadius = 15,
                 MaxBoost = maxBoost,
                 DutyCyclePeriod = 25,
                 MinPctOverlapDutyCycles = minOctOverlapCycles,

@@ -2,10 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.IO;
 
 
 namespace NeoCortexApi.Utility
@@ -42,7 +41,7 @@ namespace NeoCortexApi.Utility
             var value = string.Join(" [ ", arr.Select(x => x.ArrToString()).ToArray(), " ] ");
             return value;
         }
-       
+
 
         /// <summary>
         /// Returns the product of each integer in the specified array.
@@ -60,7 +59,7 @@ namespace NeoCortexApi.Utility
             return retVal;
         }
 
-      
+
         /// <summary>
         /// Returns an array with the same shape and the contents converted to integers.
         /// </summary>
@@ -210,7 +209,7 @@ namespace NeoCortexApi.Utility
             return intList;
         }
 
-       
+
         /// <summary>
         /// Returns an array whose members are the quotient of the dividend array values and the divisor array values.
         /// </summary>
@@ -280,7 +279,7 @@ namespace NeoCortexApi.Utility
             return quotient;
         }
 
-       
+
 
         /// <summary>
         /// Returns an array whose members are the product of the multiplicand array values and the factor array values.
@@ -323,6 +322,27 @@ namespace NeoCortexApi.Utility
             foreach (var item in source)
             {
                 if (predicate(item))
+                    retVal.Add(indx);
+
+                indx++;
+            }
+
+            return retVal.ToArray();
+        }
+
+        /// <summary>
+        /// Gets index of item in array, which satisfies specified condition.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static int[] IndexesWithNonZeros(this IEnumerable<int> source)
+        {
+            List<int> retVal = new List<int>();
+            
+            int indx = 0;
+            foreach (var item in source)
+            {
+                if (item == 1)
                     retVal.Add(indx);
 
                 indx++;
@@ -399,7 +419,7 @@ namespace NeoCortexApi.Utility
             return retVal;
         }
 
-   
+
 
         /// <summary>
         /// Returns the average of all the specified array contents.
@@ -655,7 +675,7 @@ namespace NeoCortexApi.Utility
             return orig;
         }
 
-      
+
         /// <summary>
         /// Returns a sorted unique (dupicates removed) array of integers.
         /// </summary>
@@ -741,14 +761,14 @@ namespace NeoCortexApi.Utility
         /// Sets the values in the specified values array at the indexes specified,
         /// to the value "setTo".
         /// </summary>
-        /// <param name="values">the values to alter if at the specified indexes.</param>
+        /// <param name="valuesToSet">The values to alter if at the specified indexes.</param>
         /// <param name="indexes">the indexes of the values array to alter.</param>
         /// <param name="val">the value to set at the specified indexes.</param>
-        public static void SetIndexesTo(double[] values, int[] indexes, double val)
+        public static void SetIndexesTo(double[] valuesToSet, int[] indexes, double val)
         {
             for (int i = 0; i < indexes.Length; i++)
             {
-                values[indexes[i]] = val;
+                valuesToSet[indexes[i]] = val;
             }
         }
 
@@ -783,7 +803,7 @@ namespace NeoCortexApi.Utility
             }
         }
 
-      
+
         /// <summary>
         /// Returns a random, sorted, and  unique array of the specified sample size of selections from the specified list of choices.
         /// </summary>
@@ -832,7 +852,7 @@ namespace NeoCortexApi.Utility
         /// <param name="max">the maximum value.</param>
         /// <returns></returns>
         /// TODO min max ???
-        public static double[] Clip(double[] values, double min, double max)
+        public static double[] EnsureBetweenMinAndMax(double[] values, double min, double max)
         {
             for (int i = 0; i < values.Length; i++)
             {
@@ -922,7 +942,7 @@ namespace NeoCortexApi.Utility
         /// <param name="array">the values being compared.</param>
         /// <param name="indexes">indices of array being compared.</param>
         /// <returns>the count of values greater.</returns>
-        public static int ValueGreaterThanCountAtIndex(double compareValue, double[] array, int[] indexes)
+        public static int GreaterThanAtIndex(double compareValue, double[] array, int[] indexes)
         {
             int count = 0;
             for (int i = 0; i < indexes.Length; i++)
@@ -1020,7 +1040,7 @@ namespace NeoCortexApi.Utility
             }
         }
 
-       
+
         /// <summary>
         /// Returns a flag indicating whether the specified array is a sparse array of 0's and 1's or not.
         /// </summary>
@@ -1044,19 +1064,20 @@ namespace NeoCortexApi.Utility
             return false;
         }
 
-      
+
         /// <summary>
-        /// Makes all values in the specified array which are less than or equal to the specified <paramref name="x"/> value,
-        /// equal to the specified <paramref name="y"/>.
+        /// Makes all values in the specified array which are less than or equal to the specified <paramref name="comparingValue"/> value,
+        /// equal to the specified <paramref name="valueToBeSet"/>.
         /// </summary>
-        /// <param name="array"></param>
-        /// <param name="x">the comparison.</param>
-        /// <param name="y">the value to set if the comparison fails.</param>
-        public static void LessOrEqualXThanSetToY(double[] array, double x, double y)
+        /// <param name="array">Traverses through this array and set the element on 'y' if the current value of the element is less than 'x'. </param>
+        /// <param name="comparingValue">the comparison.</param>
+        /// <param name="valueToBeSet">the value to set if the comparison fails.</param>
+        public static void LessOrEqualXThanSetToY(double[] array, double comparingValue, double valueToBeSet)
         {
             for (int i = 0; i < array.Length; i++)
             {
-                if (array[i] <= x) array[i] = y;
+                if (array[i] <= comparingValue) 
+                    array[i] = valueToBeSet;
             }
         }
 
@@ -1108,21 +1129,21 @@ namespace NeoCortexApi.Utility
         //    return IntStream.of(ints).boxed().collect(Collectors.toList()).toArray(new Integer[ints.length]);
         //}
 
-        
+
         //Returns a boxed Double[] from the specified primitive array
         //@param doubles       the primitive double array
         //@return
-        
+
         //public static Double[] toBoxed(double[] doubles)
         //{
         //    return DoubleStream.of(doubles).boxed().collect(Collectors.toList()).toArray(new Double[doubles.length]);
         //}
 
-        
+
         //Returns a byte array transformed from the specified boolean array.
         //@param input     the boolean array to transform to a byte array
         //@return          a byte array
-        
+
         //public static byte[] toBytes(bool[] input)
         //{
         //    byte[] toReturn = new byte[input.Length / 8];
@@ -1140,13 +1161,13 @@ namespace NeoCortexApi.Utility
         //    return toReturn;
         //}
 
-        
+
         //Converts an array of Integer objects to an array of its
         //primitive form.
-        
+
         //@param doubs
         //@return
-        
+
         //public static int[] toPrimitive(Integer[] ints)
         //{
         //    int[] retVal = new int[ints.Length];
@@ -1157,13 +1178,13 @@ namespace NeoCortexApi.Utility
         //    return retVal;
         //}
 
-        
+
         //Converts an array of Double objects to an array of its
         //primitive form.
-        
+
         //@param doubs
         //@return
-        
+
         //public static double[] toPrimitive(Double[] doubs)
         //{
         //    double[] retVal = new double[doubs.Length];
@@ -1174,11 +1195,11 @@ namespace NeoCortexApi.Utility
         //    return retVal;
         //}
 
-        
+
         //Returns the index of the max value in the specified array
         //@param array the array to find the max value index in
         //@return the index of the max value
-        
+
         //public static int argmax(double[] array)
         //{
         //    int index = -1;
@@ -1637,11 +1658,11 @@ namespace NeoCortexApi.Utility
             }
         }
 
-        
+
         //Convert multidimensional array to readable String
         //@param array
         //@return String representation of array
-        
+
         //public static String intArrayToString(Object array)
         //{
         //    StringBuilder result = new StringBuilder();
@@ -1654,13 +1675,13 @@ namespace NeoCortexApi.Utility
         //    return result.toString();
         //}
 
-        
+
         //Return True if all elements of the  <tt>values</tt> have evaluated to true with <tt>condition</tt>
         //@param values
         //@param condition
         //@param <T>
         //@return
-        
+
         //public static <T> boolean all(final int[] values, final Condition<T> condition)
         //{
         //    for (int element : values)
@@ -1673,13 +1694,13 @@ namespace NeoCortexApi.Utility
         //    return true;
         //}
 
-        
+
         //Concat arrays
-        
+
         //@return The concatenated array
-        
+
         //http://stackoverflow.com/a/784842
-        
+
 
         //public static <T> T[] concatAll(T[] first, T[]... rest)
         //    {
@@ -1698,13 +1719,13 @@ namespace NeoCortexApi.Utility
         //        return result;
         //    }
 
-        
+
         //Concat int arrays
-        
+
         //@return The concatenated array
-        
+
         //http://stackoverflow.com/a/784842
-        
+
         //@SafeVarargs
         //public static int[] concatAll(int[] first, int[]... rest)
         //{
@@ -1907,10 +1928,10 @@ namespace NeoCortexApi.Utility
         public static List<T[]> RememberArray<T>(List<T[]> listOfArrays, int maxNumOfArrays, T[] newArray)
         {
             listOfArrays.Insert(0, newArray);
-            
+
             if (listOfArrays.Count > maxNumOfArrays)
                 listOfArrays.RemoveAt(listOfArrays.Count - 1);
-            
+
             return listOfArrays;
         }
 

@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Damir Dobric. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
-using NeoCortexApi.Entities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.IO;
 
 namespace NeoCortexApi.Entities
 {
@@ -63,6 +63,10 @@ namespace NeoCortexApi.Entities
             this.numOfNodes = numOfNodes;
             this.backingArray = Array.CreateInstance(typeof(int), dimensions);
             this.dimensions = dimensions;
+        }
+
+        public InMemoryArray()
+        {
         }
 
         //public static IDistributedArray CreateInstance(Type type, int[] dimensions)
@@ -197,7 +201,83 @@ namespace NeoCortexApi.Entities
                 backingArray.SetValue(0, rowIndex, i);
             }
         }
+        public bool Equals(InMemoryArray obj)
+        {
+            if (this == obj)
+                return true;
 
+            if (obj == null)
+                return false;
+            if (this.dimensions != obj.dimensions)
+                return false;
+            else if (this.backingArray != obj.backingArray)
+                return false;
+            else if (this.numOfNodes != obj.numOfNodes)
+                return false;
+            else if (this.Rank != obj.Rank)
+                return false;
+            else if (this.Dimensions != obj.Dimensions)
+                return false;
 
+            return true;
+        }
+        #region Serialization
+        public void Serialize(StreamWriter writer)
+        {
+            HtmSerializer2 ser = new HtmSerializer2();
+
+            ser.SerializeBegin(nameof(InMemoryArray), writer);
+            
+            ser.SerializeValue(this.backingArray, writer);
+            ser.SerializeValue(this.dimensions, writer);
+            ser.SerializeValue(this.numOfNodes, writer);
+
+            ser.SerializeEnd(nameof(InMemoryArray), writer);
+        }
+        public static InMemoryArray Deserialize(StreamReader sr)
+        {
+            InMemoryArray array = new InMemoryArray();
+
+            HtmSerializer2 ser = new HtmSerializer2();
+
+            while (sr.Peek() >= 0)
+            {
+                string data = sr.ReadLine();
+                if (data == String.Empty || data == ser.ReadBegin(nameof(InMemoryArray)))
+                {
+                    continue;
+                }
+                else if (data == ser.ReadEnd(nameof(InMemoryArray)))
+                {
+                    break;
+                }
+                else
+                {
+                    string[] str = data.Split(HtmSerializer2.ParameterDelimiter);
+                    for (int i = 0; i < str.Length; i++)
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                                {
+                                    array.dimensions = ser.ReadArrayInt(str[i]);
+                                    break;
+                                }
+                            case 1:
+                                {
+                                    array.numOfNodes = ser.ReadIntValue(str[i]);
+                                    break;
+                                }
+                            default:
+                                { break; }
+
+                        }
+                    }
+                }
+            }
+
+            return array;
+        }
+        #endregion
     }
 }

@@ -1,11 +1,10 @@
 ﻿// Copyright (c) Damir Dobric. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-using System.Collections;
 using NeoCortexApi.Entities;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NeoCortexApi.Utility
 {
@@ -15,7 +14,7 @@ namespace NeoCortexApi.Utility
     /// </summary>
     /// <typeparam name="R">The return type of the user-provided <see cref="Func{T, TResult}"/>s</typeparam>
     /// <remarks>
-    /// Author: cogmission
+    /// Author: cogmission, ddobric
     /// </remarks>
     public class GroupBy2<R> : IEnumerable<Pair<R, List<List<Object>>>>, IEnumerator<Pair<R, List<List<Object>>>> where R : class//, Generator<Tuple> 
                                                                                                                                  //  where R : IComparable<R>
@@ -63,15 +62,7 @@ namespace NeoCortexApi.Utility
         }
 
 
-        /* @return a n + 1 dimensional tuple, where the first element is the
-        * key of the group and the other n entries are lists of
-        * objects that are a member of the current group that is being
-        * iterated over in the nth list passed in. Note that this
-        *          is a generator and a n+1 dimensional tuple is yielded for
-        *          every group.If a list has no members in the current
-        *          group, {
-            @link Slot#NONE} is returned in place of a generator.
-        */
+ 
         /// <summary>
         /// TODO: change to C# code
         /// Returns a {@code GroupBy2} instance which is used to group lists of objects in ascending order using keys supplied by their associated {@link Function}s. <para/>
@@ -372,7 +363,9 @@ namespace NeoCortexApi.Utility
             /// </summary>
             /// <param name="obj">an object to be tested for equality</param>
             /// <returns>true if the other object is "equal to" this object otherwise false</returns>
+#pragma warning disable CS0114 // 'GroupBy2<R>.Slot<T>.Equals(object)' hides inherited member 'object.Equals(object)'. To make the current member override that implementation, add the override keyword. Otherwise add the new keyword.
             public bool Equals(object obj)
+#pragma warning restore CS0114 // 'GroupBy2<R>.Slot<T>.Equals(object)' hides inherited member 'object.Equals(object)'. To make the current member override that implementation, add the override keyword. Otherwise add the new keyword.
             {
                 if (this == obj)
                 {

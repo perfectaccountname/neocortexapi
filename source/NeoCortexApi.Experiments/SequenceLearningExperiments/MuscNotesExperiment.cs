@@ -1,24 +1,15 @@
 ﻿// Copyright (c) Damir Dobric. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Globalization;
-using NeoCortexApi.Encoders;
-using NeoCortexApi.Network;
-using NeoCortexApi;
-using NeoCortexApi.Entities;
-using System.Diagnostics;
-using NeoCortexEntities.NeuroVisualizer;
-using WebSocketNeuroVisualizer;
-using NeoCortexApi.Utility;
-using System.Text;
-using System.IO;
-using System.Threading;
-using System.Net.WebSockets;
-using System.Threading.Tasks;
 using NeoCortexApi.Classifiers;
+using NeoCortexApi.Encoders;
+using NeoCortexApi.Entities;
+using NeoCortexApi.Network;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading;
 
 namespace NeoCortexApi.Experiments
 {
@@ -434,7 +425,6 @@ namespace NeoCortexApi.Experiments
                 LocalAreaDensity = -1,
                 NumActiveColumnsPerInhArea = 0.02 * numColumns,
                 PotentialRadius = 50,
-                InhibitionRadius = 15,
                 MaxBoost = 10.0,
                 DutyCyclePeriod = 25,
                 MinPctOverlapDutyCycles = 0.75,

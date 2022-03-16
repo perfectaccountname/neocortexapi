@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeoCortexApi;
 using NeoCortexApi.Entities;
@@ -13,6 +12,7 @@ namespace UnitTestsProject
     [TestClass]
     public class HTMSerializationTests
     {
+
         [TestMethod]
         [TestCategory("Serialization")]
         public void SerializeValueTest()
@@ -202,7 +202,7 @@ namespace UnitTestsProject
             Assert.IsTrue(vs1.SequenceEqual(vs));
         }
 
-     
+
 
         [TestMethod]
         [TestCategory("Serialization")]
@@ -210,38 +210,47 @@ namespace UnitTestsProject
         {
             HtmSerializer2 htm = new HtmSerializer2();
             Cell[] cells = new Cell[2];
+            Cell[] cells1;
+            cells[0] = new Cell(12, 14, 16, 18, new CellActivity());
+
+            var distSeg1 = new DistalDendrite(cells[0], 1, 2, 2, 1.0, 100);
+            cells[0].DistalDendrites.Add(distSeg1);
+
+            var distSeg2 = new DistalDendrite(cells[0], 44, 24, 34, 1.0, 100);
+            cells[0].DistalDendrites.Add(distSeg2);
+
+            Cell preSynapticcell = new Cell(11, 14, 16, 18, new CellActivity());
+
+            var synapse1 = new Synapse(cells[0], distSeg1.SegmentIndex, 23, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse1);
+
+            var synapse2 = new Synapse(cells[0], distSeg2.SegmentIndex, 27, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse2);
+
+            cells[1] = new Cell(2, 4, 1, 8, new CellActivity());
+
+            var distSeg3 = new DistalDendrite(cells[1], 3, 4, 7, 1.0, 100);
+            cells[1].DistalDendrites.Add(distSeg3);
+
+            var distSeg4 = new DistalDendrite(cells[1], 4, 34, 94, 1.0, 100);
+            cells[1].DistalDendrites.Add(distSeg4);
+
+            Cell preSynapticcell1 = new Cell(1, 1, 6, 8, new CellActivity());
+
+            var synapse3 = new Synapse(cells[1], distSeg3.SegmentIndex, 23, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse1);
+
+            var synapse4 = new Synapse(cells[1], distSeg4.SegmentIndex, 27, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse2);
             using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeArrayCell)}.txt"))
             {
-                htm.SerializeBegin("UnitTest", sw);
-
-                cells[0] = new Cell(1, 1, 1, 1, new CellActivity());
-
-                cells[0].DistalDendrites = new List<DistalDendrite>();
-
-                cells[0].DistalDendrites.Add(new DistalDendrite(cells[0], 1, 2, 2, 1.0, 100));
-                cells[0].DistalDendrites.Add(new DistalDendrite(cells[0], 44, 24, 34, 1.0, 100));
-
-                cells[0].ReceptorSynapses = new List<Synapse>();
-
-                cells[0].ReceptorSynapses.Add(new Synapse(cells[0], 1, 23, 1.0));
-                cells[0].ReceptorSynapses.Add(new Synapse(cells[0], 3, 27, 1.0));
-
-                cells[1] = new Cell(1, 1, 1, 3, new CellActivity());
-
-                cells[1].DistalDendrites = new List<DistalDendrite>();
-
-                cells[1].DistalDendrites.Add(new DistalDendrite(cells[1], 1, 3, 5, 1.0, 100));
-                cells[1].DistalDendrites.Add(new DistalDendrite(cells[1], 4, 24, 3, 1.0, 100));
-
-                cells[1].ReceptorSynapses = new List<Synapse>();
-
-                cells[1].ReceptorSynapses.Add(new Synapse(cells[1], 21, 23, 1.0));
-                cells[1].ReceptorSynapses.Add(new Synapse(cells[1], 3, 7, 1.0));
-
                 htm.SerializeValue(cells, sw);
-
-                htm.SerializeEnd("UnitTest", sw);
             }
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeArrayCell)}.txt"))
+            {
+                //cells1 = htm.DeserializeCellArray(data,sr);
+            }
+            //Assert.IsTrue(cells.SequenceEqual(cells1));
         }
 
         [TestMethod]
@@ -271,7 +280,7 @@ namespace UnitTestsProject
 
                     if (data == String.Empty || data == htm.ReadBegin("UnitTest"))
                     {
-                        
+
                     }
                     else if (data == htm.ReadEnd("UnitTest"))
                     {
@@ -411,7 +420,7 @@ namespace UnitTestsProject
             Assert.IsTrue(keyValuePairs.SequenceEqual(keyValues));
         }
 
-        
+
 
         [TestMethod]
         [TestCategory("Serialization")]
@@ -428,89 +437,396 @@ namespace UnitTestsProject
             //Proximal + Distal
             //Dictionary<Segment, List<Synapse>> keyValues, StreamWriter sw
         }
-
         /// <summary>
-        /// Test empty SpatialPooler.
+        /// Test SpatialPooler.
         /// </summary>
         [TestMethod]
         [TestCategory("Serialization")]
-        public void SerializeEmptySpatialPooler()
+        public void SerializeSpatialPooler()
         {
+            HomeostaticPlasticityController homeostaticPlasticityActivator = new HomeostaticPlasticityController();
+            SpatialPooler spatial = new SpatialPooler(homeostaticPlasticityActivator);
 
-            SpatialPooler spatial = new SpatialPooler();
-
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeEmptySpatialPooler)}.txt"))
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeSpatialPooler)}.txt"))
             {
                 spatial.Serialize(sw);
             }
-            //using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeEmptySpatialPooler)}.txt"))
-
-            //{
-            //    SpatialPooler spatial1 = SpatialPooler.Deserialize(sr);
-
-            //    Assert.IsTrue(spatial1.Equals(spatial));
-            //}
-
 
         }
 
         /// <summary>
-        /// Test empty HomeostaticPlasticityController.
+        /// Test HomeostaticPlasticityController.
+        /// </summary>
+        //[TestMethod]
+        //[TestCategory("Serialization")]
+        //[DataRow(3, 2, 6.2)]
+        //public void SerializeHomeostaticPlasticityController(int minCycles, int numOfCyclesToWaitOnChange, double requiredSimilarityThreshold)
+        //{
+        //    int[] inputDims = { 3, 4, 5 };
+        //    int[] columnDims = { 35, 43, 52 };
+        //    HtmConfig matrix = new HtmConfig(inputDims, columnDims);
+        //    Connections connections = new Connections(matrix);
+        //    HomeostaticPlasticityController homeostatic = new HomeostaticPlasticityController(connections, minCycles, onStabilityStatusChanged, numOfCyclesToWaitOnChange , requiredSimilarityThreshold);
+
+        //    using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeHomeostaticPlasticityController)}.txt"))
+        //    {
+        //        homeostatic.Serialize(sw);
+        //    }
+
+        //}
+
+        [TestMethod]
+        [TestCategory("Serialization")]
+
+        public void SerializeConnectionsTest()
+        {
+            int[] inputDims = { 3, 4, 5 };
+            int[] columnDims = { 35, 43, 52 };
+            HtmConfig cfg = new HtmConfig(inputDims, columnDims);
+            
+            Connections connections = new Connections(cfg);
+
+            Cell cells = new Cell(12, 14, 16, 18, new CellActivity());
+
+            var distSeg1 = new DistalDendrite(cells, 1, 2, 2, 1.0, 100);
+
+            var distSeg2 = new DistalDendrite(cells, 44, 24, 34, 1.0, 100);
+
+            connections.ActiveSegments.Add(distSeg1);
+
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeConnectionsTest)}.txt"))
+            {
+                connections.Serialize(sw);
+            }
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeConnectionsTest)}.txt"))
+            {
+                Connections connections1 = Connections.Deserialize(sr);
+                Assert.IsTrue(connections.Equals(connections1));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(new int[] { 3, 4, 5 }, new int[] { 35, 43, 52 })]
+        public void SerializeHtmConfigTest(int[] inputDims, int[] columnDims)
+        {
+            HtmConfig matrix = new HtmConfig(inputDims, columnDims);
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeHtmConfigTest)}.txt"))
+            {
+                matrix.Serialize(sw);
+            }
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeHtmConfigTest)}.txt"))
+            {
+                HtmConfig matrix1 = HtmConfig.Deserialize(sr);
+                Assert.IsTrue(matrix.Equals(matrix1));
+            }
+
+        }
+
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(2, 5, 8.3, 2)]
+        public void SerializeColumnTest(int numCells, int colIndx, double synapsePermConnected, int numInputs)
+        {
+            Column matrix = new Column(numCells, colIndx, synapsePermConnected, numInputs);
+
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeColumnTest)}.txt"))
+            {
+                matrix.Serialize(sw);
+            }
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeColumnTest)}.txt"))
+            {
+                //Column column = Column.Deserialize(sr);
+
+                //Assert.IsTrue(matrix.Equals(column));
+            }
+        }
+
+
+        /// <summary>
+        /// Test Cell.
         /// </summary>
         [TestMethod]
         [TestCategory("Serialization")]
-        public void SerializeEmptyHomeostaticPlasticityController()
+        [DataRow(1111, 22221, 11111, 2221)]
+        public void SerializeCellTest(int parentIndx, int colSeq, int cellsPerCol, int cellId)
         {
-
-            HomeostaticPlasticityController homeostatic = new HomeostaticPlasticityController();
-
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeEmptyHomeostaticPlasticityController)}.txt"))
-            {
-                homeostatic.Serialize(sw);
-            }
-            //using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeEmptyHomeostaticPlasticityController)}.txt"))
-
-            //{
-            //    SpatialPooler homeostatic1 = SpatialPooler.Deserialize(sr);
-
-            //    Assert.IsTrue(homeostatic1.Equals(homeostatic));
-            //}
-
-
-        }
-
-        
-
-        
-        [TestMethod]
-        [TestCategory("Serialization")]
-        public void SerializeSegmentTest()
-        {
-            //TODO
             Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
 
-            Segment seg = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
+            var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg1);
 
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeSegmentTest)}.txt"))
+            var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg2);
+
+            Cell preSynapticcell = new Cell(11, 14, 16, 18, new CellActivity());
+
+            var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse1);
+
+            var synapse2 = new Synapse(cell, distSeg2.SegmentIndex, 27, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse2);
+
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeCellTest)}.txt"))
             {
-                seg.Serialize(sw);
+                cell.SerializeT(sw);
             }
-            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeSegmentTest)}.txt"))
-            {
-                //Segment segment1 = Segment.Deserialize(sr);
 
-                // Assert.IsTrue(segment1.Equals(seg));
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeCellTest)}.txt"))
+            {
+                HtmSerializer2 ser = new HtmSerializer2();
+
+                Cell cell1 = ser.DeserializeCell(sr);
+
+                Assert.IsTrue(cell1.Equals(cell));
+            }
+        }
+        /// <summary>
+        /// Test DistalDendrite.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(1, 2, 2, 1.0, 100)]
+        public void SerializeDistalDendrite(int flatIdx, long lastUsedIteration, int ordinal, double synapsePermConnected, int numInputs)
+        {
+            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+
+            var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg1);
+
+            var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg2);
+
+            Cell preSynapticcell = new Cell(11, 14, 16, 18, new CellActivity());
+
+            var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse1);
+
+            var synapse2 = new Synapse(cell, distSeg2.SegmentIndex, 27, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse2);
+
+            // Serializes the segment to file.
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeDistalDendrite)}.txt"))
+            {
+                distSeg1.Serialize(sw);
+            }
+
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeDistalDendrite)}.txt"))
+            {
+
+                HtmSerializer2 ser = new HtmSerializer2();
+
+                DistalDendrite distSegment1 = ser.DeserializeDistalDendrite(sr);
+
+                Assert.IsTrue(distSegment1.Equals(distSeg1));
+
+            }
+        }
+        ///<summary>
+        ///Test Synapse.
+        ///</summary>
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(13, 87, 22.45)]
+        public void SerializeSynapseTest(int segmentindex, int synapseindex, double permanence)
+        {
+
+            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+
+            var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg1);
+
+            var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg2);
+
+            Cell preSynapticcell = new Cell(11, 14, 16, 28, new CellActivity());
+
+            var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse1);
+
+            var synapse2 = new Synapse(cell, distSeg2.SegmentIndex, 27, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse2);
+
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeSynapseTest)}.txt"))
+            {
+                synapse1.Serialize(sw);
+
+            }
+
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeSynapseTest)}.txt"))
+            {
+                HtmSerializer2 ser = new HtmSerializer2();
+
+                Synapse synapseT1 = ser.DeserializeSynapse(sr);
+
+                Assert.IsTrue(synapse1.Equals(synapseT1));
             }
         }
 
         /// <summary>
-        /// Test empty SegmentActivity.
+        /// Test Pool.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(0, 34)]
+        [DataRow(1, 28)]
+        [DataRow(1000, 3426)]
+        public void SerializePoolTest(int size, int numInputs)
+        {
+            Pool pool = new Pool(size, numInputs);
+
+            //pool.m_SynapseConnections = new List<int>();
+            //pool.m_SynapseConnections.Add(34);
+            //pool.m_SynapseConnections.Add(87);
+            //pool.m_SynapseConnections.Add(44);
+
+            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+
+            var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg1);
+
+            var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg2);
+
+            Cell preSynapticcell = new Cell(11, 14, 16, 28, new CellActivity());
+
+            var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse1);
+
+            var synapse2 = new Synapse(cell, distSeg2.SegmentIndex, 27, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse2);
+
+            pool.m_SynapsesBySourceIndex = new Dictionary<int, Synapse>();
+            pool.m_SynapsesBySourceIndex.Add(3, synapse1);
+            pool.m_SynapsesBySourceIndex.Add(67, synapse2);
+
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializePoolTest)}.txt"))
+            {
+                pool.Serialize(sw);
+            }
+
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializePoolTest)}.txt"))
+            {
+                Pool pool1 = Pool.Deserialize(sr);
+
+                Assert.IsTrue(pool1.Equals(pool));
+            }
+        }
+        ///<summary>
+        ///Test ProximalDendrite.
+        ///</summary>
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(0, 12.34, 23)]
+        public void SerializeProximalDendriteTest(int colIndx, double synapsePermConnected, int numInputs)
+        {
+            ProximalDendrite proximal = new ProximalDendrite(colIndx, synapsePermConnected, numInputs);
+            var rfPool = new Pool(1, 28);
+
+            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+
+            var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg1);
+
+            var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
+            cell.DistalDendrites.Add(distSeg2);
+
+            Cell preSynapticcell = new Cell(11, 14, 16, 28, new CellActivity());
+
+            var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse1);
+
+            var synapse2 = new Synapse(cell, distSeg2.SegmentIndex, 27, 1.0);
+            preSynapticcell.ReceptorSynapses.Add(synapse2);
+
+            rfPool.m_SynapsesBySourceIndex = new Dictionary<int, Synapse>();
+            rfPool.m_SynapsesBySourceIndex.Add(3, synapse1);
+            rfPool.m_SynapsesBySourceIndex.Add(67, synapse2);
+
+            proximal.RFPool = rfPool;
+
+            //HtmSerializer2 htm = new HtmSerializer2();
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeProximalDendriteTest)}.txt"))
+            {
+                proximal.Serialize(sw);
+            }
+            //htm.indent($"ser_{nameof(SerializeProximalDendriteTest)}.txt");
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeProximalDendriteTest)}.txt"))
+            {
+                ProximalDendrite proximal1 = ProximalDendrite.Deserialize(sr);
+
+                Assert.IsTrue(proximal.Equals(proximal1));
+            }
+        }
+        ///<summary>
+        ///Test HtmModuleTopology.
+        ///</summary>
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(new int[] { 3, 4, 5 }, true)]
+        [DataRow(new int[] { 43, 24, 85 }, false)]
+        [DataRow(new int[] { 15, 74, 25 }, true)]
+        public void SerializeHtmModuleTopologyTest(int[] dimensions, bool isMajorOrdering)
+        {
+            HtmModuleTopology htm = new HtmModuleTopology(dimensions, isMajorOrdering);
+
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeHtmModuleTopologyTest)}.txt"))
+            {
+                htm.Serialize(sw);
+            }
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeHtmModuleTopologyTest)}.txt"))
+            {
+                HtmModuleTopology htm1 = HtmModuleTopology.Deserialize(sr);
+
+                Assert.IsTrue(htm1.Equals(htm));
+            }
+        }
+        /// <summary>
+        /// Test integer value.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Serialization")]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(1000)]
+        [DataRow(-1200010)]
+        [DataRow(int.MaxValue)]
+        [DataRow(-int.MaxValue)]
+        public void SerializeIntegerTest(int val)
+        {
+            Integer inte = new Integer(val);
+
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeIntegerTest)}.txt"))
+            {
+                inte.Serialize(sw);
+
+            }
+
+            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeIntegerTest)}.txt"))
+            {
+                Integer inte1 = Integer.Deserialize(sr);
+
+                Assert.IsTrue(inte1.Equals(inte));
+
+            }
+        }
+        /// <summary>
+        /// Test SegmentActivity.
         /// </summary>
         [TestMethod]
         [TestCategory("Serialization")]
         public void SerializeSegmentActivityTest()
         {
             SegmentActivity segment = new SegmentActivity();
+
+            segment.ActiveSynapses = new Dictionary<int, int>();
+            segment.ActiveSynapses.Add(23, 1);
+            segment.ActiveSynapses.Add(24, 2);
+            segment.ActiveSynapses.Add(35, 3);
+            segment.PotentialSynapses = new Dictionary<int, int>();
+            segment.PotentialSynapses.Add(2, 56);
+            segment.PotentialSynapses.Add(22, 6);
+            segment.PotentialSynapses.Add(24, 26);
 
             using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeSegmentActivityTest)}.txt"))
             {
@@ -524,244 +840,29 @@ namespace UnitTestsProject
                 Assert.IsTrue(segment1.Equals(segment));
             }
         }
-        /// <summary>
-        /// Test Cell.
-        /// </summary>
-        [TestMethod]
-        [TestCategory("Serialization")]
-        //[DataRow(1, 1, 1, 1)]
-        [DataRow(1111, 22221, 11111, 2221)]
-        //[DataRow(1211212121, 2121212121, 212121211, 3232132131)]
-        public void SerializeCellTest(int parentIndx, int colSeq, int cellsPerCol, int cellId)
-        {
-            Cell cell = new Cell(parentIndx, colSeq, cellsPerCol, cellId, new CellActivity());
-
-            cell.DistalDendrites = new List<DistalDendrite>();
-
-            cell.DistalDendrites.Add(new DistalDendrite(cell, 1, 2, 2, 1.0, 100));
-            cell.DistalDendrites.Add(new DistalDendrite(cell, 44, 24, 34, 1.0, 100));
-
-            cell.ReceptorSynapses = new List<Synapse>();
-
-            cell.ReceptorSynapses.Add(new Synapse(cell, 1, 23, 1.0));
-            cell.ReceptorSynapses.Add(new Synapse(cell, 3, 27, 1.0));
-
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeCellTest)}.txt"))
-            {
-                cell.Serialize(sw);
-            }
-
-            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeCellTest)}.txt"))
-            {
-                //Cell cell1 = Cell.Deserialize(sr);
-
-                //Assert.IsTrue(cell1.Equals(cell));
-            }
-        }
-
-        ///<summary>
-        ///Test List of DistalDendrite
-        ///</summary>
-        [TestMethod]
-        [TestCategory("Serialization")]
-        public void SerializeDistalDendriteList()
-        {
-            HtmSerializer2 htm = new HtmSerializer2();
-            Cell cell = new Cell(1, 1, 1, 1, new CellActivity());
-            List<DistalDendrite> distals = new List<DistalDendrite>();
-            distals.Add(new DistalDendrite(cell, 1, 2, 2, 1.0, 100));
-            distals.Add(new DistalDendrite(cell, 44, 24, 34, 1.0, 100));
-            List<DistalDendrite> distals2 = new List<DistalDendrite>();
-            distals2.Add(new DistalDendrite(cell, 1, 2, 2, 1.0, 100));
-            distals2.Add(new DistalDendrite(cell, 44, 24, 34, 1.0, 100));
-            Assert.IsTrue(distals.SequenceEqual(distals2));
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeDistalDendriteList)}"))
-            {
-                htm.SerializeBegin("UnitTest", sw);
-                htm.SerializeValue(distals, sw);
-                htm.SerializeEnd("UnitTest", sw);
-            }
-            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeDistalDendriteList)}"))
-            {
-                List<DistalDendrite> distals1 = new List<DistalDendrite>();
-                while(sr.Peek() > 0)
-                {
-                    string str = sr.ReadLine();
-                    if (str == htm.ReadBegin(nameof(DistalDendrite)))
-                    {
-                        distals1.Add(DistalDendrite.Deserialize(sr));
-                    }
-                }
-                
-            }
-        }
-        /// <summary>
-        /// Test DistalDendrite.
-        /// </summary>
-        [TestMethod]
-        [TestCategory("Serialization")]
-        public void SerializeDistalDendrite()
-        {
-            Cell cell = new Cell(1, 1, 1, 1, new CellActivity());
-            DistalDendrite distal = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
-            //distal.Synapses.Add(new Synapse(cell, 1, 23, 1.0));
-            //distal.Synapses.Add(new Synapse(cell, 3, 27, 1.0));
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeDistalDendrite)}.txt"))
-            {
-                distal.Serialize(sw);
-            }
-            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeDistalDendrite)}.txt"))
-            {
-                DistalDendrite distal1 = DistalDendrite.Deserialize(sr);
-
-                Assert.IsTrue(distal1.Equals(distal));
-            }
-        }
 
         /// <summary>
-        /// Test List of Synapse.
+        /// 
         /// </summary>
         [TestMethod]
-        [TestCategory("Serialization")]
-        public void SerializeSynapseList()
+        public void SerializeInMemDistDictTest()
         {
-            HtmSerializer2 htm = new HtmSerializer2();
-            Cell cells = new Cell(1, 1, 1, 1, new CellActivity());
-            List<Synapse> synapses = new List<Synapse>();
-            synapses.Add(new Synapse(cells, 1, 23, 2.0));
-            synapses.Add(new Synapse(cells, 3, 27, 1.0));
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeSynapseList)}.txt"))
-            {
-                htm.SerializeBegin("UnitTest", sw);
+            InMemoryDistributedDictionary<int, Column> dict = new InMemoryDistributedDictionary<int, Column>(1);
 
-                //htm.SerializeValue(synapses, sw);
-
-                htm.SerializeEnd("UnitTest", sw);
-            }
-            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeSynapseList)}.txt"))
+            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeInMemDistDictTest)}.txt"))
             {
-                List<Synapse> synapses1 = new List<Synapse>();
-                while(sr.Peek() > 0)
-                {
-                    string data = sr.ReadLine();
-                    if (data == String.Empty || data == htm.ReadBegin("UnitTest") )
-                    {
-                        continue;
-                    }
-                    else if (data == htm.ReadBegin(nameof(Synapse)))
-                    {
-                        //synapses1.Add(Synapse.Deserialize(sr));
-                    }
-                }
-                Assert.IsTrue(synapses.SequenceEqual(synapses1));
+                dict.Serialize(sw);
             }
         }
 
-        /// <summary>
-        /// Test Synapse.
-        /// </summary>
-        [TestMethod]
-        [TestCategory("Serialization")]
-        [DataRow(34, 24, 24.65)]
-        //[DataRow(13, 87, 22.45)]
-        //[DataRow(1000, 3400, 4573.623)]
+        #region Serialization SparseObjectMatrix<T>
 
-        public void SerializeSynapseTest(int segmentindex,int synapseindex,double permanence)
+        #endregion
+
+        [Obsolete(" We have moved this method to HtmSerializer2.")]
+        internal static bool IsEqual(object obj1, object obj2)
         {
-            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
-            //Cell cell = new Cell();
-            cell.DistalDendrites = new List<DistalDendrite>();
-
-            cell.DistalDendrites.Add(new DistalDendrite(cell, 1, 2, 2, 1.0, 100));
-            cell.DistalDendrites.Add(new DistalDendrite(cell, 44, 24, 34, 1.0, 100));
-
-            cell.ReceptorSynapses = new List<Synapse>();
-
-            cell.ReceptorSynapses.Add(new Synapse(cell, 1, 23, 1.0));
-            cell.ReceptorSynapses.Add(new Synapse(cell, 3, 27, 1.0));
-            Synapse synapse = new Synapse(cell, segmentindex, synapseindex, permanence);
-            Synapse synapse1 = null;
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeSynapseTest)}_{synapseindex}.txt"))
-            {
-                synapse.Serialize(sw);
-
-                using (StreamWriter streamWriter = new StreamWriter($"ser_{nameof(SerializeCellTest)}_{cell.Index}.txt") )
-                {
-                    cell.Serialize(streamWriter);
-                    for(int j = 0; j < cell.DistalDendrites.Count; j++)
-                    {
-                        if(!File.Exists($"Users / mouni.kolisetty / neocortexapi / NeoCortexApi / UnitTestsProject / bin / Debug / net5.0 / ser_SerializeSynapseTest_{cell.DistalDendrites[j].Ordinal}.txt"))
-                            using (StreamWriter swLD = new StreamWriter($"ser_{nameof(SerializeDistalDendrite)}_{cell.DistalDendrites[j].Ordinal}.txt"))
-                            {
-                                cell.DistalDendrites[j].Serialize(swLD);
-                            }
-                    }
-                    for (int i = 0; i < cell.ReceptorSynapses.Count; i++)
-                    {
-                        if (!File.Exists($"Users / mouni.kolisetty / neocortexapi / NeoCortexApi / UnitTestsProject / bin / Debug / net5.0 / ser_SerializeSynapseTest_{cell.ReceptorSynapses[i].SynapseIndex}.txt"))
-                            using (StreamWriter swLS = new StreamWriter($"ser_{nameof(SerializeSynapseTest)}_{cell.ReceptorSynapses[i].SynapseIndex}.txt"))
-                            {
-                                cell.ReceptorSynapses[i].Serialize(swLS);
-                            }
-                    }
-                }
-            }
-            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeSynapseTest)}_{synapseindex}.txt"))
-            {
-                 synapse1 = Synapse.Deserialize(sr);
-            }
-            using (StreamReader streamreader = new StreamReader($"ser_SerializeCellTest_{synapse1.SourceCell.Index}.txt"))
-            {
-                var mvcell = Cell.Deserialize(streamreader);
-                synapse1.SourceCell = mvcell;
-                foreach(Synapse s in synapse1.SourceCell.ReceptorSynapses)
-                {
-                    s.SourceCell = mvcell;
-                }
-                foreach (DistalDendrite dd in synapse1.SourceCell.DistalDendrites)
-                {
-                    dd.ParentCell = mvcell;
-                }
-
-            }
-            
-            Assert.IsTrue(synapse1.SourceCell.ReceptorSynapses.SequenceEqual(synapse.SourceCell.ReceptorSynapses));
-            //using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeSynapseTest)}.txt"))
-            //{
-            //    Synapse synapse1 = Synapse.Deserialize(sr);
-
-            //    Assert.IsTrue(synapse1.Equals(synapse));
-            //}
+            return false;
         }
-        
-        /// <summary>
-        /// Test integer value.
-        /// </summary>
-        [TestMethod]
-        [TestCategory("Serialization")]
-        [DataRow(0)]
-        [DataRow(1)]
-        [DataRow(1000)]
-        [DataRow(-1200010)]
-        [DataRow(int.MaxValue)]
-        [DataRow(-int.MaxValue)]
-
-        public void SerializeIntegerTest(int val)
-        {
-            Integer inte = new Integer(val);
-
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeIntegerTest)}.txt"))
-            {
-                inte.Serialize(sw);
-            }
-
-            using (StreamReader sr = new StreamReader($"ser_{nameof(SerializeIntegerTest)}.txt"))
-            {
-                Integer inte1 = Integer.Deserialize(sr);
-
-                Assert.IsTrue(inte1.Equals(inte));
-            }
-        }
-
     }
 }

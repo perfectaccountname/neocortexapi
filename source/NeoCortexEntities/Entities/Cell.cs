@@ -1,11 +1,10 @@
 ﻿// Copyright (c) Damir Dobric. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+using NeoCortexEntities.NeuroVisualizer;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using NeoCortexApi.Entities;
-using NeoCortexEntities.NeuroVisualizer;
+using System.Linq;
 
 namespace NeoCortexApi.Entities
 {
@@ -19,12 +18,12 @@ namespace NeoCortexApi.Entities
         /// Index of the cell.
         /// </summary>
         public int Index { get; set; }
-        
+
         /// <summary>
         /// The identifier of the cell.
         /// </summary>
         public int CellId { get; private set; }
-               
+
 
         /// <summary>
         /// The column, which owns this cell.
@@ -42,7 +41,9 @@ namespace NeoCortexApi.Entities
         public List<DistalDendrite> DistalDendrites { get; set; } = new List<DistalDendrite>();
 
         /// <summary>
-        /// List of receptor synapses that connect this cells as a source cell to the distal dendrit segment owned by some other cell.
+        /// List of receptor synapses that connect this cells as a source (presynaptic) cell to the distal dendrite segment owned by some other cell.
+        /// This synapse assotiates the cell (presynaptic = source cell) with the next cell (postsynaptic = destination cell).
+        /// The destination cell is the parent cell of the segment to which the presynaptic cell is connected.
         /// </summary>
         public List<Synapse> ReceptorSynapses { get; set; } = new List<Synapse>();
 
@@ -51,9 +52,9 @@ namespace NeoCortexApi.Entities
         /// </summary>
         public Cell()
         {
-     
+
         }
-       
+
         /// <summary>
         /// Constructs a new <see cref="Cell"/> object
         /// </summary>
@@ -65,9 +66,9 @@ namespace NeoCortexApi.Entities
         public Cell(int parentColumnIndx, int colSeq, int numCellsPerColumn, int cellId, CellActivity cellActivity)
         {
             this.ParentColumnIndex = parentColumnIndx;
-            
+
             this.Index = parentColumnIndx * numCellsPerColumn + colSeq;
-            
+
             this.CellId = cellId;
         }
 
@@ -159,7 +160,7 @@ namespace NeoCortexApi.Entities
         /// Serializes the cell to the stream.
         /// </summary>
         /// <param name="writer"></param>
-        public void Serialize(StreamWriter writer)
+        public void  SerializeT(StreamWriter writer)
         {
             HtmSerializer2 ser = new HtmSerializer2();
 
@@ -168,20 +169,18 @@ namespace NeoCortexApi.Entities
             ser.SerializeValue(this.Index, writer);
             ser.SerializeValue(this.CellId, writer);
             ser.SerializeValue(this.ParentColumnIndex, writer);
+
             if (this.DistalDendrites != null && this.DistalDendrites.Count > 0)
-                ser.SerializeValue(this.DistalDendrites.Select(s => s.Ordinal).ToArray(), writer);
+                ser.SerializeValue(this.DistalDendrites, writer);
 
             if (this.ReceptorSynapses != null && this.ReceptorSynapses.Count > 0)
-                ser.SerializeValue(this.ReceptorSynapses.Select(s => s.SynapseIndex).ToArray(), writer);
+                ser.SerializeValue(this.ReceptorSynapses, writer);
 
             ser.SerializeEnd(nameof(Cell), writer);
+
+            
         }
 
-        /// <summary>
-        /// Deserializes the cell from the stream.
-        /// </summary>
-        /// <param name="sr"></param>
-        /// <returns></returns>
         public static Cell Deserialize(StreamReader sr)
         {
             Cell cell = new Cell();
@@ -191,10 +190,17 @@ namespace NeoCortexApi.Entities
             while (sr.Peek() >= 0)
             {
                 string data = sr.ReadLine();
-
-                if (data == String.Empty || data == ser.ReadBegin(nameof(Cell)))
+                if (data == String.Empty || data == ser.ReadBegin(nameof(Cell)) || data.ToCharArray()[0] == HtmSerializer2.ElementsDelimiter || (data.ToCharArray()[0] == HtmSerializer2.ElementsDelimiter && data.ToCharArray()[1] == HtmSerializer2.ParameterDelimiter))
                 {
                     continue;
+                }
+                else if (data == ser.ReadBegin(nameof(DistalDendrite)))
+                {
+                    cell.DistalDendrites.Add(DistalDendrite.Deserialize(sr));
+                }
+                else if (data == ser.ReadBegin(nameof(Synapse)))
+                {
+                    return cell;
                 }
                 else if (data == ser.ReadEnd(nameof(Cell)))
                 {
@@ -222,38 +228,6 @@ namespace NeoCortexApi.Entities
                                     cell.ParentColumnIndex = ser.ReadIntValue(str[i]);
                                     break;
                                 }
-                            case 3:
-                                {
-                                    int[] vs = ser.ReadArrayInt(str[i]);
-                                    cell.DistalDendrites = new List<DistalDendrite>();
-                                    for (int j = 0; j < vs.Count(); j++)
-                                    {
-                                        cell.DistalDendrites.Add(new DistalDendrite());
-                                        cell.DistalDendrites[j].Ordinal = vs[j];
-                                        using (StreamReader swLD = new StreamReader($"ser_SerializeDistalDendrite_{cell.DistalDendrites[j].Ordinal}.txt"))
-                                        {
-                                            cell.DistalDendrites[j] = DistalDendrite.Deserialize(swLD);
-                                        }
-                                    }
-                                    break;
-                                }
-                            case 4:
-                                {
-                                    int[] vs = ser.ReadArrayInt(str[i]);
-                                    cell.ReceptorSynapses = new List<Synapse>();
-                                    for (int j = 0; j < vs.Count(); j++)
-                                    {
-                                        cell.ReceptorSynapses.Add(new Synapse());
-                                        cell.ReceptorSynapses[j].SynapseIndex = vs[j];
-
-                                        using (StreamReader swLS = new StreamReader($"ser_SerializeSynapseTest_{cell.ReceptorSynapses[j].SynapseIndex}.txt"))
-                                        {
-                                            cell.ReceptorSynapses[j] = Synapse.Deserialize(swLS);
-                                        }
-                                    }
-                                    
-                                    break;
-                                }
                             default:
                                 { break; }
 
@@ -261,9 +235,7 @@ namespace NeoCortexApi.Entities
                     }
                 }
             }
-
             return cell;
-
         }
         #endregion
     }

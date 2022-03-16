@@ -3,7 +3,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using NeoCortexApi.Entities;
 
 namespace NeoCortexApi.Types
 {
@@ -11,10 +13,10 @@ namespace NeoCortexApi.Types
     public class LinkedHashSet<T> : ISet<T>
     {
        // [field: NonSerializedAttribute()]
-        private readonly IDictionary<T, LinkedListNode<T>> dict;
+        private IDictionary<T, LinkedListNode<T>> dict;
 
        // [field: NonSerializedAttribute()]
-        private readonly LinkedList<T> list;
+        private LinkedList<T> list;
 
         public LinkedHashSet(int initialCapacity)
         {
@@ -307,6 +309,21 @@ namespace NeoCortexApi.Types
         {
             return $"{this.Count}";
         }
+
+        #region Serialization
+        public void Serialize(StreamWriter writer)
+        {
+            HtmSerializer2 ser = new HtmSerializer2();
+
+            ser.SerializeBegin(nameof(LinkedHashSet<T>), writer);
+
+            //ser.SerializeValue(this.dict, writer);
+            //ser.SerializeValue(this.list, writer);
+
+            ser.SerializeEnd(nameof(LinkedHashSet<T>), writer);
+        }
+        #endregion
+
     }
 
 }

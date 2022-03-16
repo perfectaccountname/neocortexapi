@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using NeoCortexApi;
+﻿using NeoCortexApi;
 using NeoCortexApi.Classifiers;
 using NeoCortexApi.Encoders;
 using NeoCortexApi.Entities;
 using NeoCortexApi.Network;
-using NeoCortexApi.Utility;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 
 namespace NeoCortexApiSample
@@ -17,6 +14,7 @@ namespace NeoCortexApiSample
     /// <summary>
     /// Implements an experiment that demonstrates how to learn sequences.
     /// </summary>
+    [Obsolete("Please use multisequence learning.")]
     public class SequenceLearning
     {
         public void Run()
@@ -35,8 +33,8 @@ namespace NeoCortexApiSample
                 LocalAreaDensity = -1,
                 NumActiveColumnsPerInhArea = 0.02 * numColumns,
                 PotentialRadius = (int)(0.15 * inputBits),
-                InhibitionRadius = 15,
-
+                StimulusThreshold = 5.0,
+                
                 MaxBoost = 10.0,
                 DutyCyclePeriod = 25,
                 MinPctOverlapDutyCycles = 0.75,
@@ -50,8 +48,8 @@ namespace NeoCortexApiSample
                 PermanenceIncrement = 0.15,
 
                 // Used by punishing of segments.
-                PredictedSegmentDecrement = 0.1
-            };
+                PredictedSegmentDecrement = 0.1,                
+        };
 
             double max = 20;
 
@@ -124,7 +122,7 @@ namespace NeoCortexApiSample
             }, numOfCyclesToWaitOnChange: 50);
 
 
-            SpatialPoolerMT sp = new SpatialPoolerMT(hpa);
+            SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem);
             tm.Init(mem);
 
@@ -254,7 +252,7 @@ namespace NeoCortexApiSample
                             {
                                 Debug.WriteLine($"Current Input: {input} \t| Predicted Input: {item}");
                             }
-                            
+
                             lastPredictedValue = predictedInputValues.First().PredictedInput;
                         }
                         else

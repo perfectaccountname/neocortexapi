@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Damir Dobric. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using NeoCortexApi.Entities;
+using NeoCortexApi.Utility;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace NeoCortexApi.Encoders
 {
@@ -16,11 +18,6 @@ namespace NeoCortexApi.Encoders
         /// </summary>
         protected Dictionary<string, object> Properties = new Dictionary<string, object>();
 
-
-        /** Value used to represent no data */
-        //public static readonly double SENTINEL_VALUE_FOR_MISSING_DATA = Double.NaN;
-        //protected List<Tuple<string, int>> description = new List<Tuple<string, int>>();   
-
         /// <summary>
         /// number of bits in the representation (must be >= w) 
         /// </summary>
@@ -33,9 +30,11 @@ namespace NeoCortexApi.Encoders
 
 
         protected int nInternal;
+        
         protected double rangeInternal;
-        //protected double range;
+        
         protected bool encLearningEnabled;
+        
         protected List<FieldMetaType> flattenedFieldTypeList;
 
         protected Dictionary<Dictionary<string, int>, List<FieldMetaType>> decoderFieldTypes;
@@ -84,7 +83,7 @@ namespace NeoCortexApi.Encoders
                 IsRealCortexModel = false;
                 N = 0;
                 Resolution = -1.0;
-                Radius = - 1.0;
+                Radius = -1.0;
                 Periodic = false;
                 ClipInput = false;
 
@@ -137,7 +136,7 @@ namespace NeoCortexApi.Encoders
         /// <summary>
         /// In real cortex mode, W must be >= 21. Empirical value.
         /// </summary>
-        public bool IsRealCortexModel { get => (bool)this["IsRealCortexModel"]; set => this["IsRealCortexModel"] = (bool)value; } 
+        public bool IsRealCortexModel { get => (bool)this["IsRealCortexModel"]; set => this["IsRealCortexModel"] = (bool)value; }
 
         /// <summary>
         /// The width of output vector of encoder. 
@@ -147,7 +146,7 @@ namespace NeoCortexApi.Encoders
         public int N { get => (int)this["N"]; set => this["N"] = (int)value; }
 
         public int NInternal { get => (int)this["NInternal"]; set => this["NInternal"] = (int)value; }
-                
+
         /// <summary>
         /// Number of bits set on one, which represents single encoded value.
         /// </summary>
@@ -183,7 +182,7 @@ namespace NeoCortexApi.Encoders
 
         public string Name { get => (string)this["Name"]; set => this["Name"] = value; }
 
-        public int Offset{ get => (int)this["Offset"]; set => this["Offset"] = value; }
+        public int Offset { get => (int)this["Offset"]; set => this["Offset"] = value; }
 
         #endregion
 
@@ -220,7 +219,7 @@ namespace NeoCortexApi.Encoders
         public IModuleData Compute(int[] input, bool learn)
         {
             var result = Encode(input);
-            //return new NeoCortexApiInArrawyOutput(result);
+
             return null;
         }
 
@@ -245,7 +244,7 @@ namespace NeoCortexApi.Encoders
             int[] retVal = new int[matrix.GetMaxIndex() + 1];
             for (int i = 0; i < retVal.Length; i++)
             {
-                int[] slice = matrix.getObject(i);
+                int[] slice = matrix.GetObject(i);
                 for (int j = 0; j < slice.Length; j++)
                 {
                     retVal[i] += (slice[j] * encoded[j]);
@@ -253,5 +252,39 @@ namespace NeoCortexApi.Encoders
             }
             return retVal;
         }
+
+
+        /// <summary>
+        /// Returns the rendered similarity matrix for the whole rage of values between min and max.
+        /// </summary>
+        /// <param name="traceValues">True if every value should be included in the output.</param>
+        /// <returns>Formatted matrix of similariteis, betwen encoded values.</returns>
+        public string TraceSimilarities(bool traceValues = true)
+        {
+            Dictionary<string, int[]> sdrMap = new Dictionary<string, int[]>();
+            List<string> inpVals = new List<string>();
+            StringBuilder sb = new StringBuilder();
+            
+            for (double i = this.MinVal; i < this.MaxVal; i += 1.0)
+            {
+                var sdr = this.Encode(i);
+                sdrMap.Add($"{i}", ArrayUtils.IndexWhere(sdr, (el) => el == 1));
+                inpVals.Add($"{i}");
+
+                if (traceValues)
+                {
+                    sb.AppendLine($"{i.ToString("000")} - {Helpers.StringifyVector(sdr, separator: null)}");
+                }                
+            }
+
+            sb.AppendLine();
+
+            var similarities = MathHelpers.CalculateSimilarityMatrix(sdrMap);
+
+            var results = Helpers.RenderSimilarityMatrix(inpVals, similarities);
+
+            return sb.ToString() + results;
+        }
+
     }
 }

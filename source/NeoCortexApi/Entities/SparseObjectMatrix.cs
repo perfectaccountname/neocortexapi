@@ -2,8 +2,8 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using System.IO;
 
 namespace NeoCortexApi.Entities
 {
@@ -69,6 +69,10 @@ namespace NeoCortexApi.Entities
             else
                 this.m_SparseMap = dict;
         }
+        //Default constructor for Deserialisation
+        public SparseObjectMatrix()
+        {
+        }
 
 
         /// <summary>
@@ -126,7 +130,7 @@ namespace NeoCortexApi.Entities
         /// </summary>
         /// <param name="index"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
-        public override T getObject(int index)
+        public override T GetObject(int index)
         {
             return GetColumn(index);
         }
@@ -217,6 +221,15 @@ namespace NeoCortexApi.Entities
             }
             else if (!m_SparseMap.Equals(other.m_SparseMap))
                 return false;
+            if(ModuleTopology == null)
+            {
+                if (other.ModuleTopology != null)
+                    return false;
+            }
+            else if (!ModuleTopology.Equals(other.ModuleTopology))
+                return false;
+            if (IsRemotelyDistributed != other.IsRemotelyDistributed)
+                return false;
 
             return true;
         }
@@ -229,6 +242,71 @@ namespace NeoCortexApi.Entities
         public override ICollection<KeyPair> GetObjects(int[] indexes)
         {
             throw new NotImplementedException();
+        }
+
+        public override void Serialize(StreamWriter writer)
+        {
+            HtmSerializer2 ser = new HtmSerializer2();
+
+            ser.SerializeBegin(nameof(SparseObjectMatrix<T>), writer);
+
+            ser.SerializeValue(this.IsRemotelyDistributed, writer);
+           
+            if (this.ModuleTopology != null)
+            { this.ModuleTopology.Serialize(writer); }
+
+            if(this.m_SparseMap != null)
+            { this.m_SparseMap.Serialize(writer); }
+            
+
+            ser.SerializeEnd(nameof(SparseObjectMatrix<T>), writer);
+        }
+
+        public static SparseObjectMatrix<T> Deserialize(StreamReader sr)
+        {
+            SparseObjectMatrix<T> sparse = new SparseObjectMatrix<T>();
+
+            HtmSerializer2 ser = new HtmSerializer2();
+
+            while (sr.Peek() >= 0)
+            {
+                string data = sr.ReadLine();
+                if (data == String.Empty || data == ser.ReadBegin(nameof(SparseObjectMatrix<T>)))
+                {
+                    continue;
+                }
+                else if (data == ser.ReadBegin(nameof(HtmModuleTopology)))
+                {
+                    sparse.ModuleTopology = HtmModuleTopology.Deserialize(sr);
+                }
+                //else if (data == ser.ReadBegin(nameof(InMemoryDistributedDictionary<TKey, TValue>) <{ nameof(TKey}>))
+                //{
+                //    sparse.m_SparseMap = InMemoryDistributedDictionary<TKey, TValue>.Deserialize(sr);
+                //}
+                else if (data == ser.ReadEnd(nameof(SparseObjectMatrix<T>)))
+                { 
+                    break;
+                }
+                else
+                {
+                    string[] str = data.Split(HtmSerializer2.ParameterDelimiter);
+                    for (int i = 0; i < str.Length; i++)
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                                {
+                                    //sparse.IsRemotelyDistributed = ser.ReadBoolValue(str[i]);
+                                    break;
+                                }
+                            default:
+                                { break; }
+
+                        }
+                    }
+                }
+            }
+            return sparse;
         }
     }
 }

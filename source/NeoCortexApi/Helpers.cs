@@ -1,11 +1,10 @@
 ﻿// Copyright (c) Damir Dobric. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
-using NeoCortexApi.Entities;
+using NeoCortexApi.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 
 namespace NeoCortexApi
@@ -33,45 +32,47 @@ namespace NeoCortexApi
             return vector;
         }
 
+        public string TraceSdrsMethod(List<int[]> indexesOfNoneZeros, string paddingTxt = " ", bool renderSimilarityMatrix = false)
+        { 
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Creates string representation from one dimensional vector.
         /// </summary>
         /// <param name="vector"></param>
+        /// <param name="separator">The separator used between bits.</param>
         /// <returns></returns>
-        public static string StringifyVector(int[] vector)
+        public static string StringifyVector(int[] vector, string separator=", ")
         {
             StringBuilder sb = new StringBuilder();
 
             foreach (var vectorBit in vector)
             {
                 sb.Append(vectorBit);
-                sb.Append(", ");
+                if(separator != null)
+                    sb.Append(separator);
             }
 
             return sb.ToString();
         }
 
-        public static string StringifyVector(string[] vector)
+        /// <summary>
+        /// Creates string representation from one dimensional vector.
+        /// </summary>
+        /// <param name="vector"></param>
+        /// <param name="separator">The separator used between bits.</param>
+        /// <returns></returns>
+
+        public static string StringifyVector(double[] vector, string separator = ", ")
         {
             StringBuilder sb = new StringBuilder();
 
             foreach (var vectorBit in vector)
             {
                 sb.Append(vectorBit);
-                sb.Append(", ");
-            }
-
-            return sb.ToString();
-        }
-
-        public static string StringifyVector(double[] vector)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            foreach (var vectorBit in vector)
-            {
-                sb.Append(vectorBit);
-                sb.Append(", ");
+                if (separator != null)
+                    sb.Append(separator);
             }
 
             return sb.ToString();
@@ -210,6 +211,118 @@ namespace NeoCortexApi
             {
                 x += 1.2732;
             }
+        }
+
+
+        /// <summary>
+        /// Calculates and renders the matrix of cross-similarities between a set of values.
+        /// </summary>
+        /// <param name="values">The list of values that will are correlated to eacher.</param>
+        /// <param name="similarities">The two-dimensional array of already calculated cross-similarities.</param>
+        /// <returns></returns>
+        public static string RenderSimilarityMatrix(List<string> values, double[,] similarities)
+        {
+            string[,] matrix = new string[values.Count, values.Count];
+
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                var str = String.Join(';', similarities.GetRow(0));
+                sb.AppendLine(str);
+
+                for (int j = 0; j < values.Count; j++)
+                {
+                    matrix[i, j] = similarities[i, j].ToString("0.##");
+                }
+            }
+
+            var results = Helpers.RenderSimilarityMatrix(values.ToArray(), matrix);
+
+            return results;
+        }
+
+
+        /// <summary>
+        /// Renders the similarity matrix into the readable format. 
+        /// </summary>
+        /// <param name="values">The list of values that will be compared.</param>
+        /// <param name="matrix">Two-dimensianal matrix of cross-similarities between given values. Values are already rendered as string.</param>
+        /// <returns></returns>
+
+        public static string RenderSimilarityMatrix( string[] values, string[,] matrix)
+        {
+            System.IO.StringWriter sw = new System.IO.StringWriter();
+            
+            sw.Write($"{string.Format(" {0,-15}", "")} |");
+
+            for (int k = 0; k < values.Length; k++)
+            {
+                string st = String.Format(" {0,-15} |", values[k]);
+                sw.Write($"{st}");
+            }
+
+            sw.WriteLine("");
+
+            for (int k = 0; k <= values.Length; k++)
+            {
+                string st = String.Format(" {0,-15} |", "---------------");
+                sw.Write($"{st}");
+            }
+
+            sw.WriteLine("");
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                sw.Write(String.Format(" {0,-15} |", values[i]));
+
+                for (int j = 0; j < values.Length; j++)
+                {
+                    string st = String.Format(" {0,-15} |", matrix[i, j]);
+                    sw.Write(st);
+                }
+
+                sw.WriteLine("");
+            }
+
+            sw.Flush();
+
+            var result = sw.GetStringBuilder().ToString();
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Traceout similarities between the list of provided values.
+        /// </summary>
+        /// <param name="encodedValues">Dictionary of encoded values. Key is the input value and the value is encoded input value as SDR.</param>
+        /// <param name="traceValues"></param>
+        /// <returns></returns>
+        public static string TraceSimilarities(Dictionary<string, int[]> encodedValues, bool traceValues = true)
+        {
+            Dictionary<string, int[]> sdrMap = new Dictionary<string, int[]>();
+            List<string> inpVals = new List<string>();
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var pair in encodedValues)
+            {
+                sdrMap.Add($"{pair.Key}", ArrayUtils.IndexWhere(pair.Value, (el) => el == 1));
+                inpVals.Add($"{pair.Key}");
+
+                if (traceValues)
+                {
+                    sb.AppendLine($"{pair.Key} - {Helpers.StringifyVector(pair.Value, separator: null)}");
+                }
+            }
+
+            sb.AppendLine();
+
+            var similarities = MathHelpers.CalculateSimilarityMatrix(sdrMap);
+
+            var results = Helpers.RenderSimilarityMatrix(inpVals, similarities);
+
+            return sb.ToString() + results;
         }
     }
 }

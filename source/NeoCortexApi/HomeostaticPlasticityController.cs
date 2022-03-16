@@ -20,7 +20,7 @@ namespace NeoCortexApi
     /// </summary>
     public class HomeostaticPlasticityController
     {
-        private double m_RequiredSimilarityThreshold ;
+        private double m_RequiredSimilarityThreshold;
 
         private int m_MaxPreviousElements = 5;
 
@@ -77,8 +77,8 @@ namespace NeoCortexApi
         /// Used during the deserialization proicess.
         /// </summary>
         public HomeostaticPlasticityController()
-        { 
-        
+        {
+
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace NeoCortexApi
                         cnt++;
                 }
 
-                return ((double)cnt / (double)Math.Max(originArray.Length, comparingArray.Length)) ;
+                return ((double)cnt / (double)Math.Max(originArray.Length, comparingArray.Length));
             }
             else
             {
@@ -307,7 +307,7 @@ namespace NeoCortexApi
 
                     var sdr = Helpers.StringifyVector(ArrayUtils.IndexWhere(m_InOutMap[item.Key], k => k == 1));
 
-                    string str = $"[{cnt++} - stable cycles: {this.m_NumOfStableCyclesForInput[item.Key]},len = {m_InOutMap[item.Key].Count(l=>l==1)}] \t {sdr}";
+                    string str = $"[{cnt++} - stable cycles: {this.m_NumOfStableCyclesForInput[item.Key]},len = {m_InOutMap[item.Key].Count(l => l == 1)}] \t {sdr}";
 
                     //Debug.WriteLine(keyStr);
                     //Debug.WriteLine($"{res}");
@@ -334,6 +334,39 @@ namespace NeoCortexApi
             }
         }
 
+        public bool Equals(HomeostaticPlasticityController obj)
+        {
+            if (this == obj)
+                return true;
+
+            if (obj == null)
+                return false;
+
+            if (m_HtmMemory == null)
+            {
+                if (obj.m_HtmMemory != null)
+                    return false;
+            }
+            else if (!m_HtmMemory.Equals(obj.m_HtmMemory))
+                return false;
+            if (m_RequiredSimilarityThreshold != obj.m_RequiredSimilarityThreshold)
+                return false;
+            else if (m_MaxPreviousElements != obj.m_MaxPreviousElements)
+                return false;
+            else if (m_Cycle != obj.m_Cycle)
+                return false;
+            else if (m_MinCycles != obj.m_MinCycles)
+                return false;
+            else if (m_RequiredNumOfStableCycles != obj.m_RequiredNumOfStableCycles)
+                return false;
+            else if (!m_NumOfStableCyclesForInput.SequenceEqual(obj.m_NumOfStableCyclesForInput) && !m_NumOfActiveColsForInput.SequenceEqual(m_NumOfActiveColsForInput) && !m_InOutMap.SequenceEqual(m_InOutMap))
+                return false;
+            else if (m_IsStable != obj.m_IsStable)
+                return false;
+           
+            return true;
+
+        }
 
         #region Serialization
         public void Serialize(StreamWriter writer)
@@ -341,9 +374,9 @@ namespace NeoCortexApi
             HtmSerializer2 ser = new HtmSerializer2();
 
             ser.SerializeBegin(nameof(HomeostaticPlasticityController), writer);
-
+            
+            ser.SerializeValue(this.m_RequiredSimilarityThreshold, writer);
             ser.SerializeValue(this.m_MaxPreviousElements, writer);
-            // m_HtmMemory is not serialized here. It is assumed to be serialized in the SP;
             ser.SerializeValue(this.m_Cycle, writer);
             ser.SerializeValue(this.m_MinCycles, writer);
             ser.SerializeValue(this.m_RequiredNumOfStableCycles, writer);
@@ -351,20 +384,97 @@ namespace NeoCortexApi
             ser.SerializeValue(this.m_NumOfActiveColsForInput, writer);
             ser.SerializeValue(this.m_InOutMap, writer);
             ser.SerializeValue(this.m_IsStable, writer);
-
+            
+            if (this.m_HtmMemory != null)
+            {
+                this.m_HtmMemory.Serialize(writer);
+            }
+            
             ser.SerializeEnd(nameof(HomeostaticPlasticityController), writer);
-
+            
         }
 
-        public static HomeostaticPlasticityController Deserialize(StreamReader reader)
+        public static HomeostaticPlasticityController Deserialize(StreamReader sr)
         {
             HomeostaticPlasticityController ctrl = new HomeostaticPlasticityController();
 
             HtmSerializer2 ser = new HtmSerializer2();
-            //ctrl.m_MaxPreviousElements = ser.ReadIntValue(reader);
-            //ctrl.m_MinCycles = ser.ReadIntValue(reader);
-            //ctrl.m_RequiredNumOfStableCycles = ser.ReadIntValue(reader);
-            ////...
+
+            while (sr.Peek() >= 0)
+            {
+                string data = sr.ReadLine();
+                if (data == String.Empty || data == ser.ReadBegin(nameof(HomeostaticPlasticityController)))
+                {
+                    continue;
+                }
+                else if (data == ser.ReadBegin(nameof(Connections)))
+                {
+                    ctrl.m_HtmMemory = Connections.Deserialize(sr);
+                }
+                else if (data == ser.ReadEnd(nameof(HomeostaticPlasticityController)))
+                {
+                    break;
+                }
+                else
+                {
+                    string[] str = data.Split(HtmSerializer2.ParameterDelimiter);
+                    for (int i = 0; i < str.Length; i++)
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                                {
+                                    ctrl.m_RequiredSimilarityThreshold = ser.ReadDoubleValue(str[i]);
+                                    break;
+                                }
+                            case 1:
+                                {
+                                    ctrl.m_MaxPreviousElements = ser.ReadIntValue(str[i]);
+                                    break;
+                                }
+                            case 2:
+                                {
+                                    ctrl.m_Cycle = ser.ReadIntValue(str[i]);
+                                    break;
+                                }
+                            case 3:
+                                {
+                                    ctrl.m_MinCycles = ser.ReadIntValue(str[i]);
+                                    break;
+                                }
+                            case 4:
+                                {
+                                    ctrl.m_RequiredNumOfStableCycles = ser.ReadIntValue(str[i]);
+                                    break;
+                                }
+                            case 5:
+                                {
+                                    ctrl.m_NumOfStableCyclesForInput = ser.ReadDictSIValue(str[i]);
+                                    break;
+                                }
+                            case 6:
+                                {
+                                    ctrl.m_NumOfActiveColsForInput = ser.ReadDictSIarray(str[i]);
+                                    break;
+                                }
+                            case 7:
+                                {
+                                    ctrl.m_InOutMap = ser.ReadDictSIarray(str[i]);
+                                    break;
+                                }
+                            
+                            case 8:
+                                {
+                                    ctrl.m_IsStable = ser.ReadBoolValue(str[i]);
+                                    break;
+                                }
+                            default:
+                                { break; }
+
+                        }
+                    }
+                }
+            }
 
             return ctrl;
 
