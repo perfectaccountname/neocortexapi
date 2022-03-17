@@ -40,7 +40,7 @@ namespace NeoCortexApiSample
                 LocalAreaDensity = -1,
                 NumActiveColumnsPerInhArea = 0.02 * numColumns,
                 PotentialRadius = (int)(0.15 * inputBits),
-                InhibitionRadius = 15,
+                //InhibitionRadius = 15,
 
                 MaxBoost = 10.0,
                 DutyCyclePeriod = 25,
@@ -442,7 +442,7 @@ namespace NeoCortexApiSample
                             Debug.WriteLine($"                          ");
                             Console.WriteLine($"                          ");
 
-                            printUserInputResults(predictedValues, value);
+                            //printUserInputResults(predictedValues, value);
 
                             Debug.WriteLine($"                          ");
                             Console.WriteLine($"                          ");
@@ -467,15 +467,15 @@ namespace NeoCortexApiSample
         /// <param name="predictedValues">The predicted values.</param>
         /// /// <param name="value">One value in the predicted values.</param>
         /// <returns>The maximum number of elements in all sequences in the folder.</returns>
-        private static void printUserInputResults(List<HtmClassifier<string, ComputeCycle>.ClassifierResult> predictedValues, HtmClassifier<string, ComputeCycle>.ClassifierResult value)
-        {
-            Debug.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
-            Console.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
-            Debug.WriteLine($"----------------Similarity: {value.Similarity}----------------");
-            Console.WriteLine($"----------------Similarity: {value.Similarity}----------------");
-            Debug.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
-            Console.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
-        }
+        //private static void printUserInputResults(List<HtmClassifier<string, ComputeCycle>.ClassifierResult> predictedValues, HtmClassifier<string, ComputeCycle>.ClassifierResult value)
+        //{
+        //    Debug.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
+        //    Console.WriteLine($"-----Predicted value number {predictedValues.IndexOf(value)} is: {value.PredictedInput}----");
+        //    Debug.WriteLine($"----------------Similarity: {value.Similarity}----------------");
+        //    Console.WriteLine($"----------------Similarity: {value.Similarity}----------------");
+        //    Debug.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
+        //    Console.WriteLine($"----------------Number of same bits: {value.NumOfSameBits}----------------");
+        //}
 
         /// <summary>
         /// Read all sequences in files contained in the folder and calculate the maximum sequence length.

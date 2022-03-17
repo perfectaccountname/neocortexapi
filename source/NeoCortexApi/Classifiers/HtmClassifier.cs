@@ -50,7 +50,7 @@ namespace NeoCortexApi.Classifiers
         /// <summary>
         /// Recording of all SDRs. See maxRecordedElements.
         /// </summary>
-        private Dictionary<TIN, List<int[]>> m_AllInputs = new Dictionary<TIN, List<int[]>>();
+        private Dictionary<TIN, CompressedList> m_AllInputs = new Dictionary<TIN, CompressedList>();
 
         /// <summary>
         /// Mapping between the input key and the SDR assootiated to the input.
@@ -117,7 +117,7 @@ namespace NeoCortexApi.Classifiers
             var cellIndicies = GetCellIndicies(output);
 
             if (m_AllInputs.ContainsKey(input) == false)
-                m_AllInputs.Add(input, new List<int[]>());
+                m_AllInputs.Add(input, new CompressedList());
 
             // Store the SDR only if it was not stored under the same key already.
             if (!ContainsSdr(input, cellIndicies))
