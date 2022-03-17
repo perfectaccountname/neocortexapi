@@ -91,7 +91,7 @@ namespace NeoCortexApi.Classifiers
                 compressedString = remainder.ToString() + compressedString;
                 bigInt = (bigInt - remainder) / divider;
             }
-            compressedString += ",";
+            compressedString = "," + compressedString;
         }
 
         public void Clear()
