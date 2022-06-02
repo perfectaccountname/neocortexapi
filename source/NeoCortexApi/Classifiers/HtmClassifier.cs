@@ -53,6 +53,13 @@ namespace NeoCortexApi.Classifiers
         private Dictionary<TIN, CompressedList> m_AllInputs = new Dictionary<TIN, CompressedList>();
 
         /// <summary>
+        /// Recording of all SDRs. See maxRecordedElements.
+        /// </summary>
+        private Dictionary<TIN, CompressedList> m_AllUnionInputs = new Dictionary<TIN, CompressedList>();
+
+        private Dictionary<TIN, CompressedList> m_SelectedInputs = new Dictionary<TIN, CompressedList>();
+
+        /// <summary>
         /// Mapping between the input key and the SDR assootiated to the input.
         /// </summary>
         //private Dictionary<TIN, int[]> m_ActiveMap2 = new Dictionary<TIN, int[]>();
@@ -91,6 +98,27 @@ namespace NeoCortexApi.Classifiers
             bestSdr = new int[1];
 
             foreach (var sdr in m_AllInputs[input])
+            {
+                var numOfSameBitsPct = sdr.Intersect(cellIndicies).Count();
+                if (numOfSameBitsPct >= maxSameBits)
+                {
+                    maxSameBits = numOfSameBitsPct;
+                    bestSdr = sdr;
+                }
+            }
+
+            similarity = Math.Round(MathHelpers.CalcArraySimilarity(bestSdr, cellIndicies), 2);
+
+            return maxSameBits;
+        }
+
+
+        private int GetBestUnionMatch(TIN input, int[] cellIndicies, out double similarity, out int[] bestSdr)
+        {
+            int maxSameBits = 0;
+            bestSdr = new int[1];
+
+            foreach (var sdr in m_AllUnionInputs[input])
             {
                 var numOfSameBitsPct = sdr.Intersect(cellIndicies).Count();
                 if (numOfSameBitsPct >= maxSameBits)
@@ -146,6 +174,65 @@ namespace NeoCortexApi.Classifiers
             }
         }
 
+        /// <summary>
+        /// Assotiate specified input to the given set of predictive cells.
+        /// </summary>
+        /// <param name="input">Any kind of input.</param>
+        /// <param name="output">The SDR of the input as calculated by SP.</param>
+        /// <param name="predictedOutput"></param>
+        public void Learn(TIN input, Cell[] output, TIN label)
+        {
+            var cellIndicies = GetCellIndicies(output);
+
+
+            if (m_AllInputs.ContainsKey(input) == false)
+                m_AllInputs.Add(input, new CompressedList());
+
+            // Store the SDR only if it was not stored under the same key already.
+            if (!ContainsSdr(input, cellIndicies))
+                m_AllInputs[input].Add(cellIndicies);
+            else
+            {
+                // for debugging
+            }
+
+            //
+            // Unionize all the cells
+            var unionCompressedList = new CompressedList();
+            foreach (var item in m_AllInputs)
+            {
+                var unionValue = item.Value[0];
+                for (int i = 1; i < item.Value.Count; i++)
+                {
+                    unionValue.Union(item.Value[i]);
+                }
+                unionCompressedList.Add(unionValue);
+                if(m_AllUnionInputs.ContainsKey(label))
+                {
+                    m_AllUnionInputs.Remove(label);
+                }
+                m_AllUnionInputs.Add(label, unionCompressedList);
+            }
+
+            //
+            // Make sure that only few last SDRs are recorded.
+            if (m_AllInputs[input].Count > maxRecordedElements)
+            {
+                Debug.WriteLine($"The input {input} has more ");
+                m_AllInputs[input].RemoveAt(0);
+            }
+
+            var previousOne = m_AllInputs[input][Math.Max(0, m_AllInputs[input].Count - 2)];
+
+            if (!previousOne.SequenceEqual(cellIndicies))
+            {
+                // double numOfSameBitsPct = (double)(((double)(this.activeMap2[input].Intersect(cellIndicies).Count()) / Math.Max((double)cellIndicies.Length, this.activeMap2[input].Length)));
+                // double numOfSameBitsPct = (double)(((double)(this.activeMap2[input].Intersect(cellIndicies).Count()) / (double)this.activeMap2[input].Length));
+                var numOfSameBitsPct = previousOne.Intersect(cellIndicies).Count();
+                Debug.WriteLine($"Prev/Now/Same={previousOne.Length}/{cellIndicies.Length}/{numOfSameBitsPct}");
+            }
+        }
+
 
 
         /// <summary>
@@ -159,6 +246,7 @@ namespace NeoCortexApi.Classifiers
             List<ClassifierResult<TIN>> res = new List<ClassifierResult<TIN>>();
             double maxSameBits = 0;
             TIN predictedValue = default;
+            TIN predictedUnionValue = default;
             Dictionary<TIN, ClassifierResult<TIN>> dict = new Dictionary<TIN, ClassifierResult<TIN>>();
 
             var predictedList = new List<KeyValuePair<double, string>>();
@@ -174,7 +262,24 @@ namespace NeoCortexApi.Classifiers
 
                 Debug.WriteLine($"Predictive cells: {cellIndicies.Length} \t {Helpers.StringifyVector(cellIndicies)}");
 
-                foreach (var pair in this.m_AllInputs)
+                foreach (var pair in this.m_AllUnionInputs)
+                {
+                    double similarity;
+                    int[] bestMatch;
+                    var numOfSameBitsPct = GetBestUnionMatch(pair.Key, cellIndicies, out similarity, out bestMatch);
+                    dict.Add(pair.Key, new ClassifierResult<TIN> { PredictedInput = pair.Key, NumOfSameBits = numOfSameBitsPct, Similarity = similarity });
+                    predictedList.Add(new KeyValuePair<double, string>(similarity, pair.Key.ToString()));
+
+                    if (numOfSameBitsPct > maxSameBits)
+                    {
+                        maxSameBits = numOfSameBitsPct;
+                        predictedUnionValue = pair.Key;
+                    }
+                }
+
+                GetInputsFromLabel(predictedUnionValue);
+
+                foreach (var pair in this.m_SelectedInputs)
                 {
                     if (ContainsSdr(pair.Key, cellIndicies))
                     {
@@ -206,6 +311,41 @@ namespace NeoCortexApi.Classifiers
                     }
                     n++;
                 }
+
+                m_SelectedInputs.Clear();
+
+                //foreach (var pair in this.m_AllInputs)
+                //{
+                //    if (ContainsSdr(pair.Key, cellIndicies))
+                //    {
+                //        Debug.WriteLine($">indx:{n.ToString("D3")}\tinp/len: {pair.Key}/{cellIndicies.Length}, Same Bits = {cellIndicies.Length.ToString("D3")}\t, Similarity 100.00 %\t {Helpers.StringifyVector(cellIndicies)}");
+
+                //        res.Add(new ClassifierResult<TIN> { PredictedInput = pair.Key, Similarity = (float)100.0, NumOfSameBits = cellIndicies.Length });
+                //    }
+                //    else
+                //    {
+                //        // Tried following:
+                //        //double numOfSameBitsPct = (double)(((double)(pair.Value.Intersect(arr).Count()) / Math.Max(arr.Length, pair.Value.Count())));
+                //        //double numOfSameBitsPct = (double)(((double)(pair.Value.Intersect(celIndicies).Count()) / (double)pair.Value.Length));// ;
+                //        double similarity;
+                //        int[] bestMatch;
+                //        var numOfSameBitsPct = GetBestMatch(pair.Key, cellIndicies, out similarity, out bestMatch);// pair.Value.Intersect(cellIndicies).Count();
+                //        //double simPercentage = Math.Round(MathHelpers.CalcArraySimilarity(pair.Value, cellIndicies), 2);
+                //        dict.Add(pair.Key, new ClassifierResult<TIN> { PredictedInput = pair.Key, NumOfSameBits = numOfSameBitsPct, Similarity = similarity });
+                //        predictedList.Add(new KeyValuePair<double, string>(similarity, pair.Key.ToString()));
+
+                //        if (numOfSameBitsPct > maxSameBits)
+                //        {
+                //            Debug.WriteLine($">indx:{n.ToString("D3")}\tinp/len: {pair.Key}/{bestMatch.Length}, Same Bits = {numOfSameBitsPct.ToString("D3")}\t, Similarity {similarity.ToString("000.00")} % \t {Helpers.StringifyVector(bestMatch)}");
+                //            maxSameBits = numOfSameBitsPct;
+                //            predictedValue = pair.Key;
+                //            indxOfMatchingInp = n;
+                //        }
+                //        else
+                //            Debug.WriteLine($"<indx:{n.ToString("D3")}\tinp/len: {pair.Key}/{bestMatch.Length}, Same Bits = {numOfSameBitsPct.ToString("D3")}\t, Similarity {similarity.ToString("000.00")} %\t {Helpers.StringifyVector(bestMatch)}");
+                //    }
+                //    n++;
+                //}
             }
 
             int cnt = 0;
@@ -217,6 +357,24 @@ namespace NeoCortexApi.Classifiers
             }
 
             return res;
+        }
+
+        private void GetInputsFromLabel(TIN input)
+        {
+            if (input != null)
+            {
+                foreach (var pair in this.m_AllInputs)
+                {
+                    if (pair.Key.ToString().Contains(input.ToString()))
+                    {
+                        if (m_SelectedInputs.ContainsKey(pair.Key))
+                        {
+                            m_SelectedInputs.Remove(pair.Key);
+                        }
+                        m_SelectedInputs.Add(pair.Key, m_AllInputs[pair.Key]);
+                    }
+                }
+            }
         }
 
 

@@ -228,7 +228,7 @@ namespace NeoCortexApiSample
                             actCells = lyrOut.WinnerCells;
                         }
 
-                        cls.Learn(key, actCells.ToArray());
+                        cls.Learn(key, actCells.ToArray(), sequenceKeyPair.Key);
 
                         Debug.WriteLine($"Col  SDR: {Helpers.StringifyVector(lyrOut.ActivColumnIndicies)}");
                         Debug.WriteLine($"Cell SDR: {Helpers.StringifyVector(actCells.Select(c => c.Index).ToArray())}");
