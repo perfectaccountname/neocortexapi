@@ -113,7 +113,7 @@ namespace NeoCortexApiSample
             }, numOfCyclesToWaitOnChange: 50);
 
 
-            SpatialPoolerMT sp = new SpatialPoolerMT(hpc);
+            SpatialPooler sp = new SpatialPooler(hpc);
             sp.Init(mem);
             tm.Init(mem);
 
@@ -228,7 +228,8 @@ namespace NeoCortexApiSample
                             actCells = lyrOut.WinnerCells;
                         }
 
-                        cls.Learn(key, actCells.ToArray(), sequenceKeyPair.Key);
+                        cls.Learn(key, actCells.ToArray());
+                        //cls.LearnUnion(key, actCells.ToArray());
 
                         Debug.WriteLine($"Col  SDR: {Helpers.StringifyVector(lyrOut.ActivColumnIndicies)}");
                         Debug.WriteLine($"Cell SDR: {Helpers.StringifyVector(actCells.Select(c => c.Index).ToArray())}");
@@ -247,7 +248,8 @@ namespace NeoCortexApiSample
                         if (lyrOut.PredictiveCells.Count > 0)
                         {
                             //var predictedInputValue = cls.GetPredictedInputValue(lyrOut.PredictiveCells.ToArray());
-                            var predictedInputValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 3);
+                            var predictedInputValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 1);
+                            //var predictedInputValues = cls.GetPredictedInputValuesUnion(lyrOut.PredictiveCells.ToArray(), 1);
 
                             foreach (var item in predictedInputValues)
                             {
@@ -311,8 +313,12 @@ namespace NeoCortexApiSample
             {
                 var lyrOut = this.Layer.Compute(input, false) as ComputeCycle;
 
-                List<ClassifierResult<string>> predictedInputValues = this.Classifier.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 3);
+                Stopwatch sw = Stopwatch.StartNew();
+                List<ClassifierResult<string>> predictedInputValues = this.Classifier.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 1);
+                //List<ClassifierResult<string>> predictedInputValues = this.Classifier.GetPredictedInputValuesUnion(lyrOut.PredictiveCells.ToArray(), 1);
+                sw.Stop();
 
+                Debug.WriteLine($"Elapsed prediction time: {sw.Elapsed}");
                 return predictedInputValues;
             }
 
