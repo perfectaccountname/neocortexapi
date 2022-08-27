@@ -4,6 +4,7 @@ using NeoCortexApi.Entities;
 using NeoCortexApi.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace NeoCortexApi.Encoders
@@ -11,7 +12,7 @@ namespace NeoCortexApi.Encoders
     /// <summary>
     /// Base class for all encoders.
     /// </summary> 
-    public abstract class EncoderBase : IHtmModule
+    public abstract class EncoderBase : IHtmModule, ISerializable
     {
         /// <summary>
         /// List of all encoder properties.
@@ -30,7 +31,7 @@ namespace NeoCortexApi.Encoders
 
 
         protected int nInternal;
-        
+
         protected double rangeInternal;
         
         protected bool encLearningEnabled;
@@ -131,7 +132,7 @@ namespace NeoCortexApi.Encoders
             }
         }
 
-        #region Properties
+   
 
         /// <summary>
         /// In real cortex mode, W must be >= 21. Empirical value.
@@ -183,8 +184,6 @@ namespace NeoCortexApi.Encoders
         public string Name { get => (string)this["Name"]; set => this["Name"] = value; }
 
         public int Offset { get => (int)this["Offset"]; set => this["Offset"] = value; }
-
-        #endregion
 
 
         public double RangeInternal { get => rangeInternal; set => this.rangeInternal = value; }
@@ -286,5 +285,59 @@ namespace NeoCortexApi.Encoders
             return sb.ToString() + results;
         }
 
+        public override bool Equals(object obj)
+        {
+            var encoder = obj as EncoderBase;
+            if (encoder == null)
+                return false;
+            return this.Equals(encoder);
+        }
+
+        public bool Equals(EncoderBase other)
+        {
+            if (other == null)
+                return false;
+            if (this.Properties == null)
+                return other.Properties == null;
+
+            foreach (var key in this.Properties.Keys)
+            {
+                if (other.Properties.TryGetValue(key, out var value) == false)
+                    return false;
+                if (!this[key].Equals(value))
+                    return false;
+            }
+            return true;
+        }
+
+        public void Serialize(object obj, string name, StreamWriter sw)
+        {
+            var excludeMembers = new List<string> 
+            { 
+                nameof(EncoderBase.Properties),
+                nameof(EncoderBase.halfWidth),
+                nameof(EncoderBase.rangeInternal),
+                nameof(EncoderBase.nInternal),
+                nameof(EncoderBase.encLearningEnabled),
+                nameof(EncoderBase.flattenedFieldTypeList),
+                nameof(EncoderBase.decoderFieldTypes),
+                nameof(EncoderBase.topDownValues),
+                nameof(EncoderBase.bucketValues),
+                nameof(EncoderBase.topDownMapping),
+
+            };
+            HtmSerializer2.SerializeObject(obj, name, sw, ignoreMembers: excludeMembers);
+        }
+
+        public static object Deserialize<T>(StreamReader sr, string name)
+        {
+            var excludeMembers = new List<string> { nameof(EncoderBase.Properties) };
+            return HtmSerializer2.DeserializeObject<T>(sr, name, excludeMembers);
+        }
+
+        public bool Equals(IHtmModule other)
+        {
+            return this.Equals((object)other);
+        }
     }
 }

@@ -31,7 +31,7 @@ namespace NeoCortexApi
     /// Spatial Pooler algorithm. Single-threaded version.
     /// Original version by David Ray, migrated from HTM JAVA. Over time, more and more code has been changed.
     /// </summary>
-    public class SpatialPooler : IHtmAlgorithm<int[], int[]>
+    public class SpatialPooler : IHtmAlgorithm<int[], int[]>, ISerializable
     {
         /// <summary>
         /// The instance of the <see cref="HomeostaticPlasticityController"/>.
@@ -49,6 +49,11 @@ namespace NeoCortexApi
         public SpatialPooler(HomeostaticPlasticityController homeostaticPlasticityActivator = null)
         {
             m_HomeoPlastAct = homeostaticPlasticityActivator;
+        }
+
+        public SpatialPooler()
+        {
+
         }
 
         private Connections connections;
@@ -92,8 +97,8 @@ namespace NeoCortexApi
         /// <param name="distMem">Optionally used if the paralle version of the SP should be used.</param>
         public virtual void InitMatrices(Connections conn, DistributedMemory distMem)
         {
-            if (conn.HtmConfig.Memory == null)
-                conn.HtmConfig.Memory = new SparseObjectMatrix<Column>(conn.HtmConfig.ColumnDimensions, dict: null);
+            if (conn.Memory == null)
+                conn.Memory = new SparseObjectMatrix<Column>(conn.HtmConfig.ColumnDimensions, dict: null);
 
             conn.HtmConfig.InputMatrix = new SparseBinaryMatrix(conn.HtmConfig.InputDimensions);
 
@@ -103,7 +108,7 @@ namespace NeoCortexApi
 
             //Calculate numInputs and numColumns
             int numInputs = conn.HtmConfig.InputMatrix.GetMaxIndex() + 1;
-            int numColumns = conn.HtmConfig.Memory.GetMaxIndex() + 1;
+            int numColumns = conn.Memory.GetMaxIndex() + 1;
 
             if (numColumns <= 0)
             {
@@ -130,7 +135,7 @@ namespace NeoCortexApi
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            conn.HtmConfig.Memory.set(colList);
+            conn.Memory.set(colList);
 
             sw.Stop();
 
@@ -285,8 +290,8 @@ namespace NeoCortexApi
             {
                 AdaptSynapses(this.connections, inputVector, activeColumns);
                 UpdateDutyCycles(this.connections, overlaps, activeColumns);
-                BumpUpWeakColumns(this.connections);
-                UpdateBoostFactors(this.connections);
+                BoostColsWithLowOverlap(this.connections);
+                BoostByActivationFrequency(this.connections);
                 if (IsUpdateRound(this.connections))
                 {
                     UpdateInhibitionRadius(this.connections);
@@ -469,7 +474,7 @@ namespace NeoCortexApi
             // if (sourceA[i] > 0) then targetB[i] = 1;
             // This ensures that all values in overlapCycles are set to 1, if column has some overlap.
             ArrayUtils.GreaterThanXThanSetToYInB(overlaps, overlapFrequencies, 0, 1);
-          
+
             if (activeColumns.Length > 0)
             {
                 // After this step, all rows in activeCycles are set to 1 at the index of active column.
@@ -569,7 +574,7 @@ namespace NeoCortexApi
             return ArrayUtils.Average(columnsPerInput);
         }
 
- 
+
         /// <summary>
         /// It traverses all connected synapses of the column and calculates the span, which synapses
         /// span between all input bits. Then it calculates average of spans accross all dimensions. 
@@ -634,21 +639,23 @@ namespace NeoCortexApi
         /// The permanence values for such columns are increased. 
         /// </summary>
         /// <param name="c"></param>
-        public virtual void BumpUpWeakColumns(Connections c)
+        /// <remarks>Previously known as BumpUpWeekColumns.</remarks>
+        public virtual void BoostColsWithLowOverlap(Connections c)
         {
             // Get columns with too low overlap.
-            var weakColumns = c.HtmConfig.Memory.Get1DIndexes().Where(i => c.HtmConfig.OverlapDutyCycles[i] < c.HtmConfig.MinOverlapDutyCycles[i]).ToArray();
+            var weakColumns = c.Memory.Get1DIndexes().Where(i => c.HtmConfig.OverlapDutyCycles[i] < c.HtmConfig.MinOverlapDutyCycles[i]).ToArray();
 
             for (int i = 0; i < weakColumns.Length; i++)
             {
                 Column col = c.GetColumn(weakColumns[i]);
-        
+
                 Pool pool = col.ProximalDendrite.RFPool;
                 double[] perm = pool.GetSparsePermanences();
                 ArrayUtils.RaiseValuesBy(c.HtmConfig.SynPermBelowStimulusInc, perm);
                 int[] indexes = pool.GetSparsePotential();
 
-                UpdatePermanencesForColumnSparse(c, perm, col, indexes, true);
+                col.UpdatePermanencesForColumnSparse(c.HtmConfig, perm, indexes, true);
+                //UpdatePermanencesForColumnSparse(c, perm, col, indexes, true);
             }
         }
 
@@ -715,10 +722,10 @@ namespace NeoCortexApi
         /// <param name="column">The column in the permanence, potential and connectivity matrices</param>
         /// <param name="maskPotential">Indexes of potential connections to input neurons.</param>
         /// <param name="raisePerm">a boolean value indicating whether the permanence values</param>
-        public void UpdatePermanencesForColumnSparse(Connections c, double[] perm, Column column, int[] maskPotential, bool raisePerm)
-        {
-            column.UpdatePermanencesForColumnSparse(c.HtmConfig, perm, maskPotential, raisePerm);
-        }
+        //public void UpdatePermanencesForColumnSparse(Connections c, double[] perm, Column column, int[] maskPotential, bool raisePerm)
+        //{
+        //    column.UpdatePermanencesForColumnSparse(c.HtmConfig, perm, maskPotential, raisePerm);
+        //}
 
         /// <summary>
         /// If the <see cref="HtmConfig.LocalAreaDensity"/> is specified, then this value is used as density.
@@ -1145,7 +1152,8 @@ namespace NeoCortexApi
         ///         minActiveDutyCycle
         /// </summary>
         /// <param name="c"></param>
-        public void UpdateBoostFactors(Connections c)
+        /// <remarks>In PHD known as UpdateBoostFactors.</remarks>
+        public void BoostByActivationFrequency(Connections c)
         {
             double[] activeDutyCycles = c.HtmConfig.ActiveDutyCycles;
             double[] minActiveDutyCycles = c.HtmConfig.MinActiveDutyCycles;
@@ -1154,6 +1162,7 @@ namespace NeoCortexApi
 
             //
             // Boost factors are NOT recalculated if minimum active duty cycles are all set on 0.
+            // The HPC will set this value in 0 if the SP enters the stable state.
             // MinActiveDutyCycles is set in UpdateMinDutyCycles and also controlled by HomeostaticPlasticityController.
             if (minActiveDutyCycles.Count(ma => ma > 0) == 0)
             {
@@ -1399,6 +1408,35 @@ namespace NeoCortexApi
                 }
             }
 
+            return sp;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var sp = obj as SpatialPooler;
+            if (sp == null)
+                return false;
+            return this.Equals(sp);
+        }
+
+        public bool Equals(IHtmModule other)
+        {
+            return this.Equals((object)other);
+        }
+
+        public void Serialize(object obj, string name, StreamWriter sw)
+        {
+            HtmSerializer2.SerializeObject(obj, name, sw);
+        }
+
+        public static object Deserialize<T>(StreamReader sr, string propName)
+        {
+            var obj = HtmSerializer2.DeserializeObject<T>(sr, propName);
+
+            var sp = obj as SpatialPooler;
+            if (sp == null)
+                return obj;
+            sp.m_HomeoPlastAct.SetConnections(sp.connections);
             return sp;
         }
     }

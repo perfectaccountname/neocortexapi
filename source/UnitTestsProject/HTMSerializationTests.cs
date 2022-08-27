@@ -10,7 +10,7 @@ using NeoCortexEntities.NeuroVisualizer;
 namespace UnitTestsProject
 {
     [TestClass]
-    public class HTMSerializationTests
+    public partial class HTMSerializationTests
     {
 
         [TestMethod]
@@ -211,7 +211,7 @@ namespace UnitTestsProject
             HtmSerializer2 htm = new HtmSerializer2();
             Cell[] cells = new Cell[2];
             Cell[] cells1;
-            cells[0] = new Cell(12, 14, 16, 18, new CellActivity());
+            cells[0] = new Cell(12, 14, 16,  new CellActivity());
 
             var distSeg1 = new DistalDendrite(cells[0], 1, 2, 2, 1.0, 100);
             cells[0].DistalDendrites.Add(distSeg1);
@@ -219,7 +219,7 @@ namespace UnitTestsProject
             var distSeg2 = new DistalDendrite(cells[0], 44, 24, 34, 1.0, 100);
             cells[0].DistalDendrites.Add(distSeg2);
 
-            Cell preSynapticcell = new Cell(11, 14, 16, 18, new CellActivity());
+            Cell preSynapticcell = new Cell(11, 14, 16,  new CellActivity());
 
             var synapse1 = new Synapse(cells[0], distSeg1.SegmentIndex, 23, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse1);
@@ -227,7 +227,7 @@ namespace UnitTestsProject
             var synapse2 = new Synapse(cells[0], distSeg2.SegmentIndex, 27, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse2);
 
-            cells[1] = new Cell(2, 4, 1, 8, new CellActivity());
+            cells[1] = new Cell(2, 4, 1, new CellActivity());
 
             var distSeg3 = new DistalDendrite(cells[1], 3, 4, 7, 1.0, 100);
             cells[1].DistalDendrites.Add(distSeg3);
@@ -235,7 +235,7 @@ namespace UnitTestsProject
             var distSeg4 = new DistalDendrite(cells[1], 4, 34, 94, 1.0, 100);
             cells[1].DistalDendrites.Add(distSeg4);
 
-            Cell preSynapticcell1 = new Cell(1, 1, 6, 8, new CellActivity());
+            Cell preSynapticcell1 = new Cell(1, 1, 6, new CellActivity());
 
             var synapse3 = new Synapse(cells[1], distSeg3.SegmentIndex, 23, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse1);
@@ -486,7 +486,7 @@ namespace UnitTestsProject
             
             Connections connections = new Connections(cfg);
 
-            Cell cells = new Cell(12, 14, 16, 18, new CellActivity());
+            Cell cells = new Cell(12, 14, 16, new CellActivity());
 
             var distSeg1 = new DistalDendrite(cells, 1, 2, 2, 1.0, 100);
 
@@ -551,7 +551,7 @@ namespace UnitTestsProject
         [DataRow(1111, 22221, 11111, 2221)]
         public void SerializeCellTest(int parentIndx, int colSeq, int cellsPerCol, int cellId)
         {
-            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+            Cell cell = new Cell(12, 14, 16,  new CellActivity());
 
             var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
             cell.DistalDendrites.Add(distSeg1);
@@ -559,7 +559,7 @@ namespace UnitTestsProject
             var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
             cell.DistalDendrites.Add(distSeg2);
 
-            Cell preSynapticcell = new Cell(11, 14, 16, 18, new CellActivity());
+            Cell preSynapticcell = new Cell(11, 14, 16, new CellActivity());
 
             var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse1);
@@ -589,7 +589,7 @@ namespace UnitTestsProject
         [DataRow(1, 2, 2, 1.0, 100)]
         public void SerializeDistalDendrite(int flatIdx, long lastUsedIteration, int ordinal, double synapsePermConnected, int numInputs)
         {
-            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+            Cell cell = new Cell(12, 14, 16, new CellActivity());
 
             var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
             cell.DistalDendrites.Add(distSeg1);
@@ -597,7 +597,7 @@ namespace UnitTestsProject
             var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
             cell.DistalDendrites.Add(distSeg2);
 
-            Cell preSynapticcell = new Cell(11, 14, 16, 18, new CellActivity());
+            Cell preSynapticcell = new Cell(11, 14, 16, new CellActivity());
 
             var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse1);
@@ -631,7 +631,7 @@ namespace UnitTestsProject
         public void SerializeSynapseTest(int segmentindex, int synapseindex, double permanence)
         {
 
-            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+            Cell cell = new Cell(12, 14, 16, new CellActivity());
 
             var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
             cell.DistalDendrites.Add(distSeg1);
@@ -639,7 +639,7 @@ namespace UnitTestsProject
             var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
             cell.DistalDendrites.Add(distSeg2);
 
-            Cell preSynapticcell = new Cell(11, 14, 16, 28, new CellActivity());
+            Cell preSynapticcell = new Cell(11, 14, 16, new CellActivity());
 
             var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse1);
@@ -680,15 +680,15 @@ namespace UnitTestsProject
             //pool.m_SynapseConnections.Add(87);
             //pool.m_SynapseConnections.Add(44);
 
-            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+            Cell cell = new Cell(12, 14, 16, new CellActivity());
 
-            var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
+            var distSeg1 = new DistalDendrite(cell, 1, 2, 3, 1.0, 100);
             cell.DistalDendrites.Add(distSeg1);
 
-            var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
+            var distSeg2 = new DistalDendrite(cell, 44, 24, 4, 1.0, 100);
             cell.DistalDendrites.Add(distSeg2);
 
-            Cell preSynapticcell = new Cell(11, 14, 16, 28, new CellActivity());
+            Cell preSynapticcell = new Cell(11, 14, 16, new CellActivity());
 
             var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse1);
@@ -723,7 +723,7 @@ namespace UnitTestsProject
             ProximalDendrite proximal = new ProximalDendrite(colIndx, synapsePermConnected, numInputs);
             var rfPool = new Pool(1, 28);
 
-            Cell cell = new Cell(12, 14, 16, 18, new CellActivity());
+            Cell cell = new Cell(12, 14, 16, new CellActivity());
 
             var distSeg1 = new DistalDendrite(cell, 1, 2, 2, 1.0, 100);
             cell.DistalDendrites.Add(distSeg1);
@@ -731,7 +731,7 @@ namespace UnitTestsProject
             var distSeg2 = new DistalDendrite(cell, 44, 24, 34, 1.0, 100);
             cell.DistalDendrites.Add(distSeg2);
 
-            Cell preSynapticcell = new Cell(11, 14, 16, 28, new CellActivity());
+            Cell preSynapticcell = new Cell(11, 14, 16, new CellActivity());
 
             var synapse1 = new Synapse(cell, distSeg1.SegmentIndex, 23, 1.0);
             preSynapticcell.ReceptorSynapses.Add(synapse1);
@@ -781,6 +781,7 @@ namespace UnitTestsProject
                 Assert.IsTrue(htm1.Equals(htm));
             }
         }
+
         /// <summary>
         /// Test integer value.
         /// </summary>
@@ -841,23 +842,89 @@ namespace UnitTestsProject
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        #region Serialization SparseObjectMatrix<T>
         [TestMethod]
-        public void SerializeInMemDistDictTest()
+        [DataRow(1024)]
+        public void SerializeSparseObjectMatrix(int num)
         {
-            InMemoryDistributedDictionary<int, Column> dict = new InMemoryDistributedDictionary<int, Column>(1);
+            // Create SparseObjectMatrix
+            // either by dicrect creation or running experiment
+            int[] dimensions = { 10, 10 };
 
-            using (StreamWriter sw = new StreamWriter($"ser_{nameof(SerializeInMemDistDictTest)}.txt"))
+            //IDistributedDictionary<int, int[]> dict = new();
+
+            SparseObjectMatrix<int[]> matrix = new(dimensions, false);
+            for (int i = 0; i < num; i+=10)
             {
-                dict.Serialize(sw);
+                matrix.set(i, new int[] { 1, 2, 3, 4, 5 });
+            }
+          
+            // Serialize 
+            using (StreamWriter sw = new StreamWriter("ser.txt"))
+            {
+                matrix.Serialize(sw);
+            }
+            // Deserizlize
+            SparseObjectMatrix<int[]> matrixNew = new();
+            using (StreamReader sr = new StreamReader("ser.txt"))
+            {
+                matrixNew = SparseObjectMatrix<int[]>.Deserialize(sr);
+
+                HtmSerializer2.IsEqual(matrix, matrixNew);
+            }
+        }
+        #endregion
+
+        [TestMethod]
+        public void SerializeInMemoryDistributedDictionary()
+        {
+            InMemoryDistributedDictionary<int, int> numNodes = new InMemoryDistributedDictionary<int, int>(3);
+            // There are no Serialize of Dictionary in InMemoryDistributedDictionary
+            numNodes.Add(145, 29);
+            numNodes.Add(123, 26);
+            numNodes.Add(531, 26);
+            numNodes.Add(1536, 26);
+            numNodes.Add(1529, 26);
+            // Serialize 
+            using (StreamWriter sw = new StreamWriter("InMem.txt"))
+            {
+                numNodes.Serialize(sw);
+            }
+            // Deserizlize
+            InMemoryDistributedDictionary<int, int> newTest = new InMemoryDistributedDictionary<int, int>();
+            using (StreamReader sr = new StreamReader("InMem.txt"))
+            {
+                newTest = InMemoryDistributedDictionary<int, int>.Deserialize(sr);
+
+                HtmSerializer2.IsEqual(numNodes, newTest);
             }
         }
 
-        #region Serialization SparseObjectMatrix<T>
+        [TestMethod]
+        public void SerializeSparseBinaryMatrix()
+        {
+            // Create SParse BinarySparseMatrix
+            // either by dicrect creation or running experiment
+            int[] dimensions = { 100, 100 };
 
-        #endregion
+            //IDistributedDictionary<int, int[]> dict = new();
+
+            SparseBinaryMatrix binaryMatrix = new(dimensions, false);
+
+            // Serialize 
+            using (StreamWriter sw = new StreamWriter("Binary.txt"))
+            {
+                binaryMatrix.Serialize(sw);
+            }
+            // Deserizlize
+            SparseBinaryMatrix newBinary = new();
+            using (StreamReader sr = new StreamReader("Binary.txt"))
+            {
+                newBinary = SparseBinaryMatrix.Deserialize(sr);
+
+                HtmSerializer2.IsEqual(binaryMatrix, newBinary);
+            }
+        }
 
         [Obsolete(" We have moved this method to HtmSerializer2.")]
         internal static bool IsEqual(object obj1, object obj2)

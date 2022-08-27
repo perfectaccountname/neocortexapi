@@ -20,7 +20,7 @@ namespace NeoCortexApiSample
         /// Runs the learning of sequences.
         /// </summary>
         /// <param name="sequences">Dictionary of sequences. KEY is the sewuence name, the VALUE is th elist of element of the sequence.</param>
-        public HtmPredictionEngine Run(Dictionary<string, List<double>> sequences)
+        public Predictor Run(Dictionary<string, List<double>> sequences)
         {
             Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(MultiSequenceLearning)}");
 
@@ -76,7 +76,7 @@ namespace NeoCortexApiSample
         /// <summary>
         ///
         /// </summary>
-        private HtmPredictionEngine RunExperiment(int inputBits, HtmConfig cfg, EncoderBase encoder, Dictionary<string, List<double>> sequences)
+        private Predictor RunExperiment(int inputBits, HtmConfig cfg, EncoderBase encoder, Dictionary<string, List<double>> sequences)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -336,71 +336,10 @@ namespace NeoCortexApiSample
 
             Debug.WriteLine("------------ END ------------");
 
-            return new HtmPredictionEngine { Layer = layer1, Classifier = cls, Connections = mem };
+            return new Predictor(layer1, mem, cls);
         }
 
-        public class HtmPredictionEngine
-        {
-            public void Reset()
-            {
-                var tm = this.Layer.HtmModules.FirstOrDefault(m => m.Value is TemporalMemory);
-                ((TemporalMemory)tm.Value).Reset(this.Connections);
-            }
-            public List<ClassifierResult<string>> Predict(double input)
-            {
-                var lyrOut = this.Layer.Compute(input, false) as ComputeCycle;
-
-                Stopwatch sw = Stopwatch.StartNew();
-                List<ClassifierResult<string>> predictedInputValues = this.Classifier.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 1);
-                //List<ClassifierResult<string>> predictedInputValues = this.Classifier.GetPredictedInputValuesUnion(lyrOut.PredictiveCells.ToArray(), 1);
-                sw.Stop();
-
-                Debug.WriteLine($"Elapsed prediction time: {sw.Elapsed}");
-                return predictedInputValues;
-            }
-
-            public Connections Connections { get; set; }
-
-            public CortexLayer<object, object> Layer { get; set; }
-
-            public HtmClassifier<string, ComputeCycle> Classifier { get; set; }
-        }
-
-        public class HtmObjectPredictionEngine
-        {
-            public void Reset()
-            {
-                var tm = this.Layer.HtmModules.FirstOrDefault(m => m.Value is TemporalMemory);
-                ((TemporalMemory)tm.Value).Reset(this.Connections);
-            }
-            public int[] PredictObject(double input)
-            {
-                var lyrOut = this.Layer.Compute(input, false) as ComputeCycle;
-
-                var activeColumns = Layer.GetResult("sp") as int[];
-
-                activeColumnsUnion = activeColumnsUnion.Union(activeColumns);
-
-                objectColumnsUnion = activeColumnsUnion.ToArray();
-
-                CompareColumns(objectColumnsUnion);
-
-                return objectColumnsUnion;
-            }
-
-            private int CompareColumns(int[] objectColumnsUnion)
-            {
-                return 1;
-            }
-
-            int[] objectColumnsUnion = new int[20];
-            IEnumerable<int> activeColumnsUnion = new List<int>();
-
-            public Connections Connections { get; set; }
-
-            public CortexLayer<object, object> Layer { get; set; }
-        }
-
+      
         /// <summary>
         /// Gets the number of all unique inputs.
         /// </summary>
@@ -418,6 +357,7 @@ namespace NeoCortexApiSample
 
             return num;
         }
+
 
         /// <summary>
         /// Constracts the unique key of the element of an sequece. This key is used as input for HtmClassifier.
