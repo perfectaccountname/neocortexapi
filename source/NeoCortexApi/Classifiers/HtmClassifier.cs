@@ -204,8 +204,6 @@ namespace NeoCortexApi.Classifiers
                 var numOfSameBitsPct = previousOne.Intersect(cellIndicies).Count();
                 Debug.WriteLine($"Prev/Now/Same={previousOne.Length}/{cellIndicies.Length}/{numOfSameBitsPct}");
             }
-            sw.Stop();
-            Debug.WriteLine($"Learning time={sw.ElapsedMilliseconds}");
         }
 
         /// <summary>
