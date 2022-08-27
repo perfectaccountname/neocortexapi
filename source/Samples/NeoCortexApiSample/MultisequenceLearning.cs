@@ -93,6 +93,8 @@ namespace NeoCortexApiSample
 
             CortexLayer<object, object> layer1 = new CortexLayer<object, object>("L1");
 
+            CortexLayer<object, object> layer2 = new CortexLayer<object, object>("L2");
+
             TemporalMemory tm = new TemporalMemory();
 
             // For more information see following paper: https://www.scitepress.org/Papers/2021/103142/103142.pdf
@@ -125,6 +127,9 @@ namespace NeoCortexApiSample
             layer1.HtmModules.Add("encoder", encoder);
             layer1.HtmModules.Add("sp", sp);
 
+            layer2.HtmModules.Add("encoder", encoder);
+            layer2.HtmModules.Add("sp", sp);
+
             //double[] inputs = inputValues.ToArray();
             int[] prevActiveCols = new int[0];
             
@@ -135,6 +140,8 @@ namespace NeoCortexApiSample
             
             int maxCycles = 3500;
 
+            int objIndex = 0;
+
             //
             // Training SP to get stable. New-born stage.
             //
@@ -143,23 +150,29 @@ namespace NeoCortexApiSample
             {
                 matches = 0;
 
+                objIndex = 0;
+
                 cycle++;
 
                 Debug.WriteLine($"-------------- Newborn Cycle {cycle} ---------------");
 
                 foreach (var inputs in sequences)
                 {
+                    objIndex++;
+                    var lyrOut2 = layer2.Compute(objIndex, true);
+
                     foreach (var input in inputs.Value)
                     {
                         Debug.WriteLine($" -- {inputs.Key} - {input} --");
                     
-                        var lyrOut = layer1.Compute(input, true);
+                        var lyrOut1 = layer1.Compute(input, true);
 
                         if (isInStableState)
                             break;
                     }
 
                     if (isInStableState)
+                        objIndex = 0;
                         break;
                 }
             }
@@ -199,9 +212,9 @@ namespace NeoCortexApiSample
                     {
                         Debug.WriteLine($"-------------- {input} ---------------");
 
-                        var lyrOut = layer1.Compute(input, true) as ComputeCycle;
+                        var lyrOut1 = layer1.Compute(input, true) as ComputeCycle;
 
-                        var activeColumns = layer1.GetResult("sp") as int[];
+                        var activeColumns1 = layer1.GetResult("sp") as int[];
 
                         previousInputs.Add(input.ToString());
                         if (previousInputs.Count > (maxPrevInputs + 1))
@@ -219,19 +232,19 @@ namespace NeoCortexApiSample
 
                         List<Cell> actCells;
 
-                        if (lyrOut.ActiveCells.Count == lyrOut.WinnerCells.Count)
+                        if (lyrOut1.ActiveCells.Count == lyrOut1.WinnerCells.Count)
                         {
-                            actCells = lyrOut.ActiveCells;
+                            actCells = lyrOut1.ActiveCells;
                         }
                         else
                         {
-                            actCells = lyrOut.WinnerCells;
+                            actCells = lyrOut1.WinnerCells;
                         }
 
                         cls.Learn(key, actCells.ToArray());
                         //cls.LearnUnion(key, actCells.ToArray());
 
-                        Debug.WriteLine($"Col  SDR: {Helpers.StringifyVector(lyrOut.ActivColumnIndicies)}");
+                        Debug.WriteLine($"Col  SDR: {Helpers.StringifyVector(lyrOut1.ActivColumnIndicies)}");
                         Debug.WriteLine($"Cell SDR: {Helpers.StringifyVector(actCells.Select(c => c.Index).ToArray())}");
 
                         //
@@ -245,10 +258,10 @@ namespace NeoCortexApiSample
                         else
                             Debug.WriteLine($"Missmatch! Actual value: {key} - Predicted values: {String.Join(',', lastPredictedValues)}");
 
-                        if (lyrOut.PredictiveCells.Count > 0)
+                        if (lyrOut1.PredictiveCells.Count > 0)
                         {
                             //var predictedInputValue = cls.GetPredictedInputValue(lyrOut.PredictiveCells.ToArray());
-                            var predictedInputValues = cls.GetPredictedInputValues(lyrOut.PredictiveCells.ToArray(), 1);
+                            var predictedInputValues = cls.GetPredictedInputValues(lyrOut1.PredictiveCells.ToArray(), 1);
                             //var predictedInputValues = cls.GetPredictedInputValuesUnion(lyrOut.PredictiveCells.ToArray(), 1);
 
                             foreach (var item in predictedInputValues)
@@ -295,7 +308,31 @@ namespace NeoCortexApiSample
                     // This resets the learned state, so the first element starts allways from the beginning.
                     tm.Reset(mem);
                 }
+                objIndex++;
+                var lyrOut2 = layer2.Compute(objIndex, false) as ComputeCycle;
+                var activeObjColumns = layer2.GetResult("sp") as int[];
+
+                List<int[]> test = new List<int[]>();
+
+                foreach (var input in sequenceKeyPair.Value)
+                {
+                    var lyrOut1 = layer1.Compute(input, false) as ComputeCycle;
+                    var activeColumns = layer1.GetResult("sp") as int[];
+                    cls.LearnObj(activeColumns, activeObjColumns);
+                }
             }
+
+            var lyrOut = layer1.Compute("1", false) as ComputeCycle;
+            var actColumns = layer1.GetResult("sp") as int[];
+            var predictedObj = cls.GetPredictedObj(actColumns);
+
+            lyrOut = layer1.Compute("2", false) as ComputeCycle;
+            actColumns = layer1.GetResult("sp") as int[];
+            predictedObj = cls.GetPredictedObj(actColumns);
+
+            lyrOut = layer1.Compute("3", false) as ComputeCycle;
+            actColumns = layer1.GetResult("sp") as int[];
+            predictedObj = cls.GetPredictedObj(actColumns);
 
             Debug.WriteLine("------------ END ------------");
 
@@ -327,6 +364,41 @@ namespace NeoCortexApiSample
             public CortexLayer<object, object> Layer { get; set; }
 
             public HtmClassifier<string, ComputeCycle> Classifier { get; set; }
+        }
+
+        public class HtmObjectPredictionEngine
+        {
+            public void Reset()
+            {
+                var tm = this.Layer.HtmModules.FirstOrDefault(m => m.Value is TemporalMemory);
+                ((TemporalMemory)tm.Value).Reset(this.Connections);
+            }
+            public int[] PredictObject(double input)
+            {
+                var lyrOut = this.Layer.Compute(input, false) as ComputeCycle;
+
+                var activeColumns = Layer.GetResult("sp") as int[];
+
+                activeColumnsUnion = activeColumnsUnion.Union(activeColumns);
+
+                objectColumnsUnion = activeColumnsUnion.ToArray();
+
+                CompareColumns(objectColumnsUnion);
+
+                return objectColumnsUnion;
+            }
+
+            private int CompareColumns(int[] objectColumnsUnion)
+            {
+                return 1;
+            }
+
+            int[] objectColumnsUnion = new int[20];
+            IEnumerable<int> activeColumnsUnion = new List<int>();
+
+            public Connections Connections { get; set; }
+
+            public CortexLayer<object, object> Layer { get; set; }
         }
 
         /// <summary>

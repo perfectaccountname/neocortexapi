@@ -40,6 +40,8 @@ namespace NeoCortexApi
 
         public string Name { get; set; }
 
+        public Dictionary<int[], List<int[]>> featureKeyPair { get; set; }
+
         /// <summary>
         /// Default constructor.
         /// </summary>

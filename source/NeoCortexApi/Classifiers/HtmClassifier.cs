@@ -59,6 +59,10 @@ namespace NeoCortexApi.Classifiers
 
         private Dictionary<TIN, List<int[]>> m_SelectedInputs = new Dictionary<TIN, List<int[]>>();
 
+        private Dictionary<string, List<int[]>> m_AllObjFeatures = new Dictionary<string, List<int[]>>();
+
+        private List<int[]> m_SelectedObjs = new List<int[]>();
+
         /// <summary>
         /// Mapping between the input key and the SDR assootiated to the input.
         /// </summary>
@@ -193,6 +197,46 @@ namespace NeoCortexApi.Classifiers
             }
             sw.Stop();
             Debug.WriteLine($"Learning time={sw.ElapsedMilliseconds}");
+        }
+
+        /// <summary>
+        /// Assotiate specified feature to an object.
+        /// </summary>
+        /// <param name="obj">The SDR of the object as calculated by SP.</param>
+        /// <param name="feature">The SDR of the feature as calculated by SP.</param>
+        public void LearnObj(int[] feature, int[] obj)
+        {
+            var featureString = string.Join("-", feature);
+            if (!m_AllObjFeatures.ContainsKey(featureString))
+            {
+                List<int[]> values = new List<int[]>();
+                m_AllObjFeatures.Add(featureString, new List<int[]>());
+            }
+
+            // Store the SDR only if it was not stored under the same key already.
+            if (!ContainsObjSdr(featureString, obj))
+            {
+                m_AllObjFeatures[featureString].Add(obj);
+            }
+        }
+
+        /// <summary>
+        /// Checks if the same SDR is already stored under the given key.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="sdr"></param>
+        /// <returns></returns>
+        private bool ContainsObjSdr(string feature, int[] obj)
+        {
+            foreach (var item in m_AllObjFeatures[feature])
+            {
+                if (item.SequenceEqual(obj))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -475,6 +519,51 @@ namespace NeoCortexApi.Classifiers
             }
 
             return res;
+        }
+
+        /// <summary>
+        /// Gets multiple predicted values.
+        /// </summary>
+        /// <param name="feature">The current SDR of feature.</param>
+        /// <returns>List of predicted objects.</returns>
+        public List<int[]> GetPredictedObj(int[] feature)
+        {
+            var featureString = string.Join("-", feature);
+
+            //
+            // 
+            if (m_SelectedObjs.Count == 0)
+            {
+                if (m_AllObjFeatures.ContainsKey(featureString))
+                {
+                    return m_SelectedObjs = m_AllObjFeatures[featureString];
+                }
+            }
+            else
+            {
+                List<int[]> newSelectedObjs = new List<int[]>();
+                foreach (var selectedObj in m_SelectedObjs)
+                {
+                    foreach (var obj in m_AllObjFeatures[featureString])
+                    {
+                        if (obj.SequenceEqual(selectedObj))
+                        {
+                            newSelectedObjs.Add(selectedObj);
+                        }
+                    }
+                }
+                return m_SelectedObjs = newSelectedObjs;
+            }
+
+            return m_SelectedObjs;
+        }
+
+        /// <summary>
+        /// Reset selected objects.
+        /// </summary>
+        public void ResetSelectedObjs()
+        {
+            m_SelectedObjs.Clear();
         }
 
         private void GetInputsFromLabel(TIN input)
