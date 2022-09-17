@@ -3,6 +3,7 @@ using NeoCortexApi.Encoders;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using static NeoCortexApiSample.MultiSequenceLearning;
 
@@ -28,8 +29,39 @@ namespace NeoCortexApiSample
             //SequenceLearning experiment = new SequenceLearning();
             //experiment.Run();
 
-           // RunMultiSimpleSequenceLearningExperiment();
-            RunMultiSequenceLearningExperiment();
+            // RunMultiSimpleSequenceLearningExperiment();
+            // RunMultiSequenceLearningExperiment();
+            RunObjectRecognitionExperiment();
+        }
+
+        private static void RunObjectRecognitionExperiment()
+        {
+            List<Sample> samples = new List<Sample>();
+            Sample sample = new Sample();
+            Sample sample1 = new Sample();
+            Sample sample2 = new Sample();
+
+            // TODO
+            //sample.Feature add color
+            //sample.Feature add odd/even
+            sample.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "0", "108.png"));
+            sample.Feature.Add("parity", 20.0);
+            sample.Feature.Add("object", 0.0);
+
+            sample1.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "0", "114.png"));
+            sample1.Feature.Add("parity", 20.0);
+            sample1.Feature.Add("object", 0.0);
+
+            sample2.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "1", "1002.png"));
+            sample2.Feature.Add("parity", 19.0);
+            sample2.Feature.Add("object", 1.0);
+
+            samples.Add(sample);
+            samples.Add(sample1);
+            samples.Add(sample2);
+
+            ObjectRecognition experiment = new ObjectRecognition();
+            var predictor = experiment.Run(samples);
         }
 
         private static void RunMultiSimpleSequenceLearningExperiment()
@@ -103,32 +135,6 @@ namespace NeoCortexApiSample
                     var tokens = res.First().PredictedInput.Split('_');
                     var tokens2 = res.First().PredictedInput.Split('-');
                     Debug.WriteLine($"Predicted Sequence: {tokens[0]}, predicted next element {tokens2.Last()}");
-                }
-                else
-                    Debug.WriteLine("Nothing predicted :(");
-            }
-
-            Debug.WriteLine("------------------------------");
-        }
-
-        private static void PredictObject(HtmPredictionEngine predictor, double[] list)
-        {
-            Debug.WriteLine("------------------------------");
-
-            foreach (var item in list)
-            {
-                var res = predictor.Predict(item);
-
-                if (res.Count > 0)
-                {
-                    foreach (var pred in res)
-                    {
-                        Debug.WriteLine($"{pred.PredictedInput} - {pred.Similarity}");
-                    }
-
-                    var tokens = res.First().PredictedInput.Split('_');
-                    var tokens2 = res.First().PredictedInput.Split('-');
-                    Debug.WriteLine($"Predicted Sequence: {tokens[0]}, predicted next element {tokens2[tokens.Length - 1]}");
                 }
                 else
                     Debug.WriteLine("Nothing predicted :(");
