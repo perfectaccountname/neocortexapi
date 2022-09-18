@@ -318,21 +318,21 @@ namespace NeoCortexApiSample
                 {
                     var lyrOut1 = layer1.Compute(input, false) as ComputeCycle;
                     var activeColumns = layer1.GetResult("sp") as int[];
-                    cls.LearnObj(activeColumns, activeObjColumns);
+                    //cls.LearnObj(activeColumns, activeObjColumns);
                 }
             }
 
-            var lyrOut = layer1.Compute("1", false) as ComputeCycle;
-            var actColumns = layer1.GetResult("sp") as int[];
-            var predictedObj = cls.GetPredictedObj(actColumns);
+            //var lyrOut = layer1.Compute("1", false) as ComputeCycle;
+            //var actColumns = layer1.GetResult("sp") as int[];
+            //var predictedObj = cls.GetPredictedObj(actColumns);
 
-            lyrOut = layer1.Compute("2", false) as ComputeCycle;
-            actColumns = layer1.GetResult("sp") as int[];
-            predictedObj = cls.GetPredictedObj(actColumns);
+            //lyrOut = layer1.Compute("2", false) as ComputeCycle;
+            //actColumns = layer1.GetResult("sp") as int[];
+            //predictedObj = cls.GetPredictedObj(actColumns);
 
-            lyrOut = layer1.Compute("3", false) as ComputeCycle;
-            actColumns = layer1.GetResult("sp") as int[];
-            predictedObj = cls.GetPredictedObj(actColumns);
+            //lyrOut = layer1.Compute("3", false) as ComputeCycle;
+            //actColumns = layer1.GetResult("sp") as int[];
+            //predictedObj = cls.GetPredictedObj(actColumns);
 
             Debug.WriteLine("------------ END ------------");
 

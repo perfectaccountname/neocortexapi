@@ -546,15 +546,19 @@ namespace NeoCortexApi.Classifiers
         /// <returns>List of predicted objects.</returns>
         public List<int[]> GetPredictedObj(int[] feature)
         {
-            var featureString = string.Join("-", feature);
+            //var featureString = string.Join("-", feature);
+
+            //
+            //
+            var matchingFeature = GetBestMatchingFeature(m_AllObjFeatures, feature);
 
             //
             // 
             if (m_SelectedObjs.Count == 0)
             {
-                if (m_AllObjFeatures.ContainsKey(featureString))
+                if (m_AllObjFeatures.ContainsKey(matchingFeature))
                 {
-                    return m_SelectedObjs = m_AllObjFeatures[featureString];
+                    return m_SelectedObjs = m_AllObjFeatures[matchingFeature];
                 }
             }
             else
@@ -562,7 +566,7 @@ namespace NeoCortexApi.Classifiers
                 List<int[]> newSelectedObjs = new List<int[]>();
                 foreach (var selectedObj in m_SelectedObjs)
                 {
-                    foreach (var obj in m_AllObjFeatures[featureString])
+                    foreach (var obj in m_AllObjFeatures[matchingFeature])
                     {
                         if (obj.SequenceEqual(selectedObj))
                         {
@@ -574,6 +578,30 @@ namespace NeoCortexApi.Classifiers
             }
 
             return m_SelectedObjs;
+
+        }
+
+
+        /// <summary>
+        /// Get the best matching feature with the most same bits.
+        /// </summary>
+        private string GetBestMatchingFeature(Dictionary<string, List<int[]>> input, int[] cellIndicies)
+        {
+            int maxSameBits = 0;
+            string bestFeature = "";
+            foreach (var feature in input.Keys)
+            {
+                var inputStringArray = feature.Split("-");
+                int[] inputArray = Array.ConvertAll(inputStringArray, s => int.Parse(s));
+                var numOfSameBitsPct = inputArray.Intersect(cellIndicies).Count();
+                if (numOfSameBitsPct >= maxSameBits)
+                {
+                    maxSameBits = numOfSameBitsPct;
+                    bestFeature = feature;
+                }
+            }
+
+            return bestFeature;
         }
 
         /// <summary>
