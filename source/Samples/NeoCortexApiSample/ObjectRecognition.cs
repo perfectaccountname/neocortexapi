@@ -1,12 +1,15 @@
 ﻿using HtmImageEncoder;
+using NeoCortex;
 using NeoCortexApi;
 using NeoCortexApi.Classifiers;
 using NeoCortexApi.Encoders;
 using NeoCortexApi.Entities;
 using NeoCortexApi.Network;
+using NeoCortexApi.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace NeoCortexApiSample
@@ -22,7 +25,7 @@ namespace NeoCortexApiSample
         /// <param name="samples">Dictionary of sequences. KEY is the feature's name, the VALUE is the value of the feature.</param>
         public Predictor Run(List<Sample> samples)
         {
-            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(MultiSequenceLearning)}");
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ObjectRecognition)}");
 
             int inputBits = 784;
             int numColumns = 1024;

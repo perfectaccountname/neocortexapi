@@ -37,28 +37,86 @@ namespace NeoCortexApiSample
         private static void RunObjectRecognitionExperiment()
         {
             List<Sample> samples = new List<Sample>();
-            Sample sample = new Sample();
-            Sample sample1 = new Sample();
-            Sample sample2 = new Sample();
+            //Sample sample = new Sample();
+            //Sample sample1 = new Sample();
+            //Sample sample2 = new Sample();
+            string trainingFolder = new string("MnistPng28x28_smallerdataset\\training");
+            string testingFolder = new string("MnistPng28x28_smallerdataset\\testing");
+            string[] digits = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
             // TODO
-            //sample.Feature add color
             //sample.Feature add odd/even
-            sample.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "0", "108.png"));
-            sample.Feature.Add("parity", 20.0);
-            sample.Feature.Add("object", 0.0);
 
-            sample1.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "0", "114.png"));
-            sample1.Feature.Add("parity", 20.0);
-            sample1.Feature.Add("object", 0.0);
+            //sample.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "0", "108.png"));
+            //sample.Feature.Add("parity", 20.0);
+            //sample.Feature.Add("object", 0.0);
 
-            sample2.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "1", "1002.png"));
-            sample2.Feature.Add("parity", 19.0);
-            sample2.Feature.Add("object", 1.0);
+            //sample1.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "0", "114.png"));
+            //sample1.Feature.Add("parity", 20.0);
+            //sample1.Feature.Add("object", 0.0);
 
-            samples.Add(sample);
-            samples.Add(sample1);
-            samples.Add(sample2);
+            //sample2.Feature.Add("shape", Path.Combine("MnistPng28x28_smallerdataset", "training", "1", "1002.png"));
+            //sample2.Feature.Add("parity", 19.0);
+            //sample2.Feature.Add("object", 1.0);
+
+            //samples.Add(sample);
+            //samples.Add(sample1);
+            //samples.Add(sample2);
+
+            string testOutputFolder = $"Output-{nameof(RunObjectRecognitionExperiment)}";
+            if (Directory.Exists(testOutputFolder))
+                Directory.Delete(testOutputFolder, true);
+
+            Directory.CreateDirectory(testOutputFolder);
+
+
+            //List<string> trainingFiles = new List<string>();
+
+            // Active columns of every specific file.
+            Dictionary<string, Dictionary<string, int[]>> fileActCols = new Dictionary<string, Dictionary<string, int[]>>();
+
+            foreach (var digit in digits)
+            {
+                string digitFolder = Path.Combine(trainingFolder, digit);
+
+                if (!Directory.Exists(digitFolder))
+                    continue;
+
+                var trainingImages = Directory.GetFiles(digitFolder);
+
+                Directory.CreateDirectory($"{testOutputFolder}\\{digit}");
+
+                //int counter = 0;
+
+                string outFolder = $"{testOutputFolder}\\{digit}";
+
+                Directory.CreateDirectory(outFolder);
+
+                double digitDouble = int.Parse(digit);
+
+                double parity = 18.0;
+
+                if (digitDouble % 2 == 0)
+                {
+                    parity = 20.0; // Even
+                }
+                else
+                {
+                    parity = 19.0; // Odd
+                }
+
+                foreach (string image in trainingImages)
+                {
+                    Sample sample = new Sample();
+                    var imageName = Path.GetFileName(image);
+
+                    sample.Feature.Add("shape", Path.Combine(digitFolder, imageName));
+                    sample.Feature.Add("parity", parity);
+                    sample.Feature.Add("object", digitDouble);
+
+                    samples.Add(sample);
+                }
+            }
 
             ObjectRecognition experiment = new ObjectRecognition();
             var predictor = experiment.Run(samples);
