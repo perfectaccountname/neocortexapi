@@ -22,8 +22,9 @@ namespace NeoCortexApiSample
         /// <summary>
         /// Runs the learning of sequences.
         /// </summary>
-        /// <param name="samples">Dictionary of sequences. KEY is the feature's name, the VALUE is the value of the feature.</param>
-        public Predictor Run(List<Sample> samples)
+        /// <param name="trainingSamples">Dictionary of training samples. KEY is the feature's name, the VALUE is the value of the feature.</param>
+        /// <param name="testingSamples">Dictionary of testing samples. KEY is the feature's name, the VALUE is the value of the feature.</param>
+        public Predictor Run(List<Sample> trainingSamples, List<Sample> testingSamples)
         {
             Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ObjectRecognition)}");
 
@@ -82,13 +83,13 @@ namespace NeoCortexApiSample
 
             EncoderBase encoderScalar = new ScalarEncoder(settings);
 
-            return RunExperiment(cfg, encoderScalar, imgEncoder, samples);
+            return RunExperiment(cfg, encoderScalar, imgEncoder, trainingSamples, testingSamples);
         }
 
         /// <summary>
         ///
         /// </summary>
-        private Predictor RunExperiment(HtmConfig cfg, EncoderBase encoderScalar, EncoderBase encoderImage, List<Sample> samples)
+        private Predictor RunExperiment(HtmConfig cfg, EncoderBase encoderScalar, EncoderBase encoderImage, List<Sample> trainingSamples, List<Sample> testingSamples)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -99,7 +100,7 @@ namespace NeoCortexApiSample
 
             HtmClassifier<string, ComputeCycle> cls = new HtmClassifier<string, ComputeCycle>();
 
-            var numUniqueInputs = samples.Count;
+            var numUniqueInputs = trainingSamples.Count;
 
             CortexLayer<object, object> layer1 = new CortexLayer<object, object>("L1");
 
@@ -161,7 +162,7 @@ namespace NeoCortexApiSample
 
                 Debug.WriteLine($"-------------- Newborn Cycle {cycle} ---------------");
 
-                foreach (var sample in samples)
+                foreach (var sample in trainingSamples)
                 {
                     var lyrOut1 = layer1.Compute(sample.Feature["shape"], true);
 
@@ -177,7 +178,7 @@ namespace NeoCortexApiSample
             // Clear all learned patterns in the classifier.
             cls.ClearState();
 
-            foreach (var sample in samples)
+            foreach (var sample in trainingSamples)
             {
                 var lyrOut1 = layer1.Compute(sample.Feature["shape"], false);
                 var activeColumns = layer1.GetResult("sp") as int[];
@@ -191,23 +192,38 @@ namespace NeoCortexApiSample
                 activeColumns = layer2.GetResult("sp") as int[];
 
                 cls.LearnObj(activeColumns, activeObjColumns);
+            }         
+
+            foreach (var sample in testingSamples)
+            {
+                var lyrOutTest = layer1.Compute(sample.Feature["shape"], false);
+                var actColumns = layer1.GetResult("sp") as int[];
+                var predictedObj = cls.GetPredictedObj(actColumns);
+
+                cls.ResetSelectedObjs();
+
+                lyrOutTest = layer2.Compute(sample.Feature["parity"].ToString(), false);
+                actColumns = layer2.GetResult("sp") as int[];
+                predictedObj = cls.GetPredictedObj(actColumns);
+
+                cls.ResetSelectedObjs();
             }
 
-            var lyrOutTest = layer1.Compute(samples[0].Feature["shape"], false);
-            var actColumns = layer1.GetResult("sp") as int[];
-            var predictedObj = cls.GetPredictedObj(actColumns);
+            //var lyrOutTest = layer1.Compute(trainingSamples[0].Feature["shape"], false);
+            //var actColumns = layer1.GetResult("sp") as int[];
+            //var predictedObj = cls.GetPredictedObj(actColumns);
 
-            cls.ResetSelectedObjs();
+            //cls.ResetSelectedObjs();
 
-            lyrOutTest = layer2.Compute(samples[1].Feature["parity"].ToString(), false);
-            actColumns = layer2.GetResult("sp") as int[];
-            predictedObj = cls.GetPredictedObj(actColumns);
+            //lyrOutTest = layer2.Compute(trainingSamples[1].Feature["parity"].ToString(), false);
+            //actColumns = layer2.GetResult("sp") as int[];
+            //predictedObj = cls.GetPredictedObj(actColumns);
 
-            cls.ResetSelectedObjs();
+            //cls.ResetSelectedObjs();
 
-            lyrOutTest = layer2.Compute(samples[2].Feature["parity"].ToString(), false);
-            actColumns = layer2.GetResult("sp") as int[];
-            predictedObj = cls.GetPredictedObj(actColumns);
+            //lyrOutTest = layer2.Compute(trainingSamples[2].Feature["parity"].ToString(), false);
+            //actColumns = layer2.GetResult("sp") as int[];
+            //predictedObj = cls.GetPredictedObj(actColumns);
 
             Debug.WriteLine("------------ END ------------");
 

@@ -36,7 +36,8 @@ namespace NeoCortexApiSample
 
         private static void RunObjectRecognitionExperiment()
         {
-            List<Sample> samples = new List<Sample>();
+            List<Sample> trainingSamples = new List<Sample>();
+            List<Sample> testingSamples = new List<Sample>();
             //Sample sample = new Sample();
             //Sample sample1 = new Sample();
             //Sample sample2 = new Sample();
@@ -77,12 +78,23 @@ namespace NeoCortexApiSample
 
             foreach (var digit in digits)
             {
-                string digitFolder = Path.Combine(trainingFolder, digit);
+                //
+                // training images.
+                string digitTrainingFolder = Path.Combine(trainingFolder, digit);
 
-                if (!Directory.Exists(digitFolder))
+                if (!Directory.Exists(digitTrainingFolder))
                     continue;
 
-                var trainingImages = Directory.GetFiles(digitFolder);
+                var trainingImages = Directory.GetFiles(digitTrainingFolder);
+
+                //
+                // testing images.
+                string digitTestingFolder = Path.Combine(trainingFolder, digit);
+
+                if (!Directory.Exists(digitTestingFolder))
+                    continue;
+
+                var testingImages = Directory.GetFiles(digitTestingFolder);
 
                 Directory.CreateDirectory($"{testOutputFolder}\\{digit}");
 
@@ -110,16 +122,28 @@ namespace NeoCortexApiSample
                     Sample sample = new Sample();
                     var imageName = Path.GetFileName(image);
 
-                    sample.Feature.Add("shape", Path.Combine(digitFolder, imageName));
+                    sample.Feature.Add("shape", Path.Combine(digitTrainingFolder, imageName));
                     sample.Feature.Add("parity", parity);
                     sample.Feature.Add("object", digitDouble);
 
-                    samples.Add(sample);
+                    trainingSamples.Add(sample);
+                }
+
+                foreach (string image in testingImages)
+                {
+                    Sample sample = new Sample();
+                    var imageName = Path.GetFileName(image);
+
+                    sample.Feature.Add("shape", Path.Combine(digitTestingFolder, imageName));
+                    sample.Feature.Add("parity", parity);
+                    sample.Feature.Add("object", digitDouble);
+
+                    testingSamples.Add(sample);
                 }
             }
 
             ObjectRecognition experiment = new ObjectRecognition();
-            var predictor = experiment.Run(samples);
+            var predictor = experiment.Run(trainingSamples, testingSamples);
         }
 
         private static void RunMultiSimpleSequenceLearningExperiment()
