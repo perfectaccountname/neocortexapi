@@ -44,6 +44,7 @@ namespace NeoCortexApiSample
             string trainingFolder = new string("MnistPng28x28_smallerdataset\\training");
             string testingFolder = new string("MnistPng28x28_smallerdataset\\testing");
             string[] digits = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+            //string[] digits = new string[] { "0", "1" };
 
             // TODO
             //sample.Feature add odd/even
@@ -114,7 +115,7 @@ namespace NeoCortexApiSample
                 }
                 else
                 {
-                    parity = 19.0; // Odd
+                    parity = 15.0; // Odd
                 }
 
                 foreach (string image in trainingImages)

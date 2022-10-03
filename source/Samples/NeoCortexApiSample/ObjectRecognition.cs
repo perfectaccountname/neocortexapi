@@ -28,7 +28,7 @@ namespace NeoCortexApiSample
         {
             Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ObjectRecognition)}");
 
-            int inputBits = 784;
+            int inputBits = 49;
             int numColumns = 1024;
 
             HtmConfig cfg = new HtmConfig(new int[] { inputBits }, new int[] { numColumns })
@@ -76,8 +76,8 @@ namespace NeoCortexApiSample
             ImageEncoder imgEncoder = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
             {
                 Inverse = false,
-                ImageHeight = 28,
-                ImageWidth = 28,
+                ImageHeight = 7,
+                ImageWidth = 7,
                 GreyScale = true,
             });
 
@@ -153,7 +153,6 @@ namespace NeoCortexApiSample
 
             //
             // Training SP to get stable. New-born stage.
-            //
             for (int i = 0; i < maxCycles && isInStableState == false; i++)
             {
                 matches = 0;
@@ -192,22 +191,53 @@ namespace NeoCortexApiSample
                 activeColumns = layer2.GetResult("sp") as int[];
 
                 cls.LearnObj(activeColumns, activeObjColumns);
-            }         
+            }
+
+
+            //
+            // Validation
+            double accuracyShape = 0;
+            double accuracyParity = 0;
+            int matchShape = 0;
+            int matchParity = 0;
 
             foreach (var sample in testingSamples)
             {
+                var lyrOut3 = layer3.Compute(sample.Feature["object"], false);
+
                 var lyrOutTest = layer1.Compute(sample.Feature["shape"], false);
                 var actColumns = layer1.GetResult("sp") as int[];
-                var predictedObj = cls.GetPredictedObj(actColumns);
+                var predictedObjs = cls.GetPredictedObj(actColumns);
+                
+                foreach(var obj in predictedObjs)
+                {
+                    if (obj.ToString().Equals(lyrOut3.ToString()))
+                    {
+                        matchShape++;
+                    }
+                }
 
                 cls.ResetSelectedObjs();
 
                 lyrOutTest = layer2.Compute(sample.Feature["parity"].ToString(), false);
                 actColumns = layer2.GetResult("sp") as int[];
-                predictedObj = cls.GetPredictedObj(actColumns);
+                predictedObjs = cls.GetPredictedObj(actColumns);
+
+                foreach (var obj in predictedObjs)
+                {
+                    if (obj.ToString().Equals(lyrOut3.ToString()))
+                    {
+                        matchParity++;
+                    }
+                }
 
                 cls.ResetSelectedObjs();
             }
+            accuracyShape = (double)matchShape / (double)testingSamples.Count() * 100;
+            accuracyParity = (double)matchParity / (double)testingSamples.Count() * 100;
+
+            Debug.WriteLine($"accuracyShape: {accuracyShape}");
+            Debug.WriteLine($"accuracyParity: {accuracyParity}");
 
             //var lyrOutTest = layer1.Compute(trainingSamples[0].Feature["shape"], false);
             //var actColumns = layer1.GetResult("sp") as int[];
