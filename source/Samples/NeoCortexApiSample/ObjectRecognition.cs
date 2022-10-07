@@ -28,7 +28,7 @@ namespace NeoCortexApiSample
         {
             Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ObjectRecognition)}");
 
-            int inputBits = 49;
+            int inputBits = 196;
             int numColumns = 1024;
 
             HtmConfig cfg = new HtmConfig(new int[] { inputBits }, new int[] { numColumns })
@@ -76,8 +76,8 @@ namespace NeoCortexApiSample
             ImageEncoder imgEncoder = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
             {
                 Inverse = false,
-                ImageHeight = 7,
-                ImageWidth = 7,
+                ImageHeight = 14,
+                ImageWidth = 14,
                 GreyScale = true,
             });
 
@@ -207,7 +207,7 @@ namespace NeoCortexApiSample
 
                 var lyrOutTest = layer1.Compute(sample.Feature["shape"], false);
                 var actColumns = layer1.GetResult("sp") as int[];
-                var predictedObjs = cls.GetPredictedObj(actColumns);
+                var predictedObjs = cls.GetPredictedObj(actColumns, 5);
                 
                 foreach(var obj in predictedObjs)
                 {
@@ -217,11 +217,11 @@ namespace NeoCortexApiSample
                     }
                 }
 
-                cls.ResetSelectedObjs();
+                //cls.ResetSelectedObjs();
 
                 lyrOutTest = layer2.Compute(sample.Feature["parity"].ToString(), false);
                 actColumns = layer2.GetResult("sp") as int[];
-                predictedObjs = cls.GetPredictedObj(actColumns);
+                predictedObjs = cls.GetPredictedObj(actColumns, 5);
 
                 foreach (var obj in predictedObjs)
                 {

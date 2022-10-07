@@ -474,41 +474,44 @@ namespace NeoCortexApi.Classifiers
         /// </summary>
         /// <param name="feature">The current SDR of feature.</param>
         /// <returns>List of predicted objects.</returns>
-        public List<int[]> GetPredictedObj(int[] feature)
+        public List<int[]> GetPredictedObj(int[] feature, int howMany)
         {
             //var featureString = string.Join("-", feature);
 
             //
             //
-            var matchingFeature = GetBestMatchingFeature(m_AllObjFeatures, feature);
+            var matchingFeatures = GetBestMatchingFeature(m_AllObjFeatures, feature, howMany);
 
             //
-            // 
-            if (m_SelectedObjs.Count == 0)
+            //
+            foreach(var pair in matchingFeatures)
             {
-                if (m_AllObjFeatures.ContainsKey(matchingFeature))
+                if (m_SelectedObjs.Count == 0)
                 {
-                    foreach (var value in m_AllObjFeatures[matchingFeature])
+                    if (m_AllObjFeatures.ContainsKey(pair))
                     {
-                        m_SelectedObjs.Add(value);
-                    }
-                    return m_SelectedObjs;
-                }
-            }
-            else
-            {
-                List<int[]> newSelectedObjs = new List<int[]>();
-                foreach (var selectedObj in m_SelectedObjs)
-                {
-                    foreach (var obj in m_AllObjFeatures[matchingFeature])
-                    {
-                        if (obj.SequenceEqual(selectedObj))
+                        foreach (var value in m_AllObjFeatures[pair])
                         {
-                            newSelectedObjs.Add(selectedObj);
+                            m_SelectedObjs.Add(value);
+                        }
+                        return m_SelectedObjs;
+                    }
+                }
+                else
+                {
+                    List<int[]> newSelectedObjs = new List<int[]>();
+                    foreach (var selectedObj in m_SelectedObjs)
+                    {
+                        foreach (var obj in m_AllObjFeatures[pair])
+                        {
+                            if (obj.SequenceEqual(selectedObj))
+                            {
+                                newSelectedObjs.Add(selectedObj);
+                            }
                         }
                     }
+                    return m_SelectedObjs = newSelectedObjs;
                 }
-                return m_SelectedObjs = newSelectedObjs;
             }
 
             return m_SelectedObjs;
@@ -519,23 +522,36 @@ namespace NeoCortexApi.Classifiers
         /// <summary>
         /// Get the best matching feature with the most same bits.
         /// </summary>
-        private string GetBestMatchingFeature(Dictionary<string, List<int[]>> input, int[] cellIndicies)
+        private List<string> GetBestMatchingFeature(Dictionary<string, List<int[]>> input, int[] cellIndicies, int howMany)
         {
             int maxSameBits = 0;
-            string bestFeature = "";
+            int cnt = 0;
+            //string bestFeature = "";
+            List<string> result = new List<string>();
+            Dictionary<string, int> dict = new Dictionary<string, int>();
             foreach (var feature in input.Keys)
             {
                 var inputStringArray = feature.Split("-");
                 int[] inputArray = Array.ConvertAll(inputStringArray, s => int.Parse(s));
                 var numOfSameBitsPct = inputArray.Intersect(cellIndicies).Count();
+
                 if (numOfSameBitsPct >= maxSameBits)
                 {
                     maxSameBits = numOfSameBitsPct;
-                    bestFeature = feature;
+                    //bestFeature = feature;
+                    dict.Add(feature, numOfSameBitsPct);
                 }
             }
 
-            return bestFeature;
+            foreach (var keyPair in dict.OrderByDescending(i => i.Value))
+            {
+                result.Add(keyPair.Key);
+                if (++cnt >= howMany)
+                    break;
+            }
+
+            return result;
+            //return bestFeature;
         }
 
         /// <summary>
