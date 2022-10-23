@@ -58,6 +58,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SequenceLearningExperiment"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HtmImageEncoder", "ImageEncoder\HtmImageEncoder.csproj", "{18560247-0A1A-4B91-AE90-B8949B9EDDFA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InvariantLearning_FrameCheck", "InvariantLearning_FrameCheck", "{4BE10887-605C-461F-8A34-C120F0C289E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvariantLearning_FrameCheck", "InvariantLearning_FrameCheck\InvariantLearning_FrameCheck.csproj", "{88733144-21AE-41DB-8783-6799A8D71847}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F5BEDB25-C6A3-4826-A8C6-679098F5CB9C} = {F5BEDB25-C6A3-4826-A8C6-679098F5CB9C}
+		{F2693439-77AF-420C-B42F-9FD5BBEC5482} = {F2693439-77AF-420C-B42F-9FD5BBEC5482}
+		{18560247-0A1A-4B91-AE90-B8949B9EDDFA} = {18560247-0A1A-4B91-AE90-B8949B9EDDFA}
+		{87A2DEFD-2CE5-4498-A860-C843FADC471C} = {87A2DEFD-2CE5-4498-A860-C843FADC471C}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invariant.Entities", "Invariant.Entities\Invariant.Entities.csproj", "{87A2DEFD-2CE5-4498-A860-C843FADC471C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -112,6 +124,14 @@ Global
 		{18560247-0A1A-4B91-AE90-B8949B9EDDFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18560247-0A1A-4B91-AE90-B8949B9EDDFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18560247-0A1A-4B91-AE90-B8949B9EDDFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88733144-21AE-41DB-8783-6799A8D71847}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88733144-21AE-41DB-8783-6799A8D71847}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88733144-21AE-41DB-8783-6799A8D71847}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88733144-21AE-41DB-8783-6799A8D71847}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87A2DEFD-2CE5-4498-A860-C843FADC471C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87A2DEFD-2CE5-4498-A860-C843FADC471C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87A2DEFD-2CE5-4498-A860-C843FADC471C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87A2DEFD-2CE5-4498-A860-C843FADC471C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -119,6 +139,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{4D9AD5E0-8F00-494E-8BEF-8041C003F4E6} = {D9879A38-CCF8-4440-B939-D066196AC775}
 		{15375C28-1424-4A29-B2AF-11ED92F6134C} = {99AE2313-7D07-4905-A0BB-52D304FCC2F7}
+		{88733144-21AE-41DB-8783-6799A8D71847} = {4BE10887-605C-461F-8A34-C120F0C289E0}
+		{87A2DEFD-2CE5-4498-A860-C843FADC471C} = {4BE10887-605C-461F-8A34-C120F0C289E0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {71185BAD-1342-4836-BCDA-6EC97118F92D}
