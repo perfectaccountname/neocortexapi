@@ -5,6 +5,9 @@ using InvariantLearning_FrameCheck;
 using Invariant.Entities;
 using System.Collections.Concurrent;
 using NeoCortexApi.Encoders;
+using HtmImageEncoder;
+using NeoCortexApi.Classifiers;
+using NeoCortexApi.Network;
 
 namespace InvariantLearning_FrameCheck
 {
@@ -28,6 +31,10 @@ namespace InvariantLearning_FrameCheck
         /// <param name="experimentFolder"></param>
         private static void InvariantRepresentation(string experimentFolder)
         {
+            #region Samples taking
+            List<Sample> trainingSamples = new List<Sample>();
+            List<Sample> testingSamples = new List<Sample>();
+
             Utility.CreateFolderIfNotExist(experimentFolder);
 
             // Get the folder of MNIST archives tar.gz files.
@@ -36,17 +43,18 @@ namespace InvariantLearning_FrameCheck
             Mnist.DataGen("MnistDataset", sourceMNIST, 10);
 
             // generate 32x32 source MNISTDataSet
-            int width = 32; int height = 32;
+            int imageWidth = 32; int imageHeight = 32;
+            int frameWidth = 16; int frameHeight = 16;
             DataSet sourceSet = new DataSet(sourceMNIST);
 
-            DataSet sourceSet_32x32 = DataSet.ScaleSet(experimentFolder, width, height, sourceSet, "sourceSet");
+            DataSet sourceSet_32x32 = DataSet.ScaleSet(experimentFolder, imageWidth, imageHeight, sourceSet, "sourceSet");
             DataSet testSet_32x32 = sourceSet_32x32.GetTestData(20);
 
             DataSet scaledTestSet = DataSet.CreateTestSet(testSet_32x32, 100, 100, Path.Combine(experimentFolder, "testSet_32x32"));
 
             // write extracted/filtered frame from 32x32 dataset into 4x4 for SP to learn all pattern
-            var listOfFrame = Frame.GetConvFrames(width, height, 4, 4, 8, 8);
-            //var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, 4, 4);
+            //var listOfFrame = Frame.GetConvFrames(imageWidth, imageHeight, frameWidth, frameHeight, 4, 4);
+            var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 4);
             string extractedFrameFolder = Path.Combine(experimentFolder, "extractedFrameTraining");
             string extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
             int index = 0;
@@ -84,25 +92,32 @@ namespace InvariantLearning_FrameCheck
                 index = 0;
             }
 
-            List<Sample> trainingSamples  = new List<Sample>();
-
             //
-            // Create training samples.
+            // Create training samples from the extracted frames.
             foreach (var classFolder in Directory.GetDirectories(extractedFrameFolder))
             {
                 string label = Path.GetFileName(classFolder);
                 foreach (var imagePath in Directory.GetFiles(classFolder))
                 {
                     var fileName = Path.GetFileNameWithoutExtension(imagePath);
-                    var coordinates = fileName.Split('_');
-                    var tlX = int.Parse(coordinates[0]);
-                    var tlY = int.Parse(coordinates[1]);
-                    var blX = int.Parse(coordinates[2]);
-                    var brY = int.Parse(coordinates[3]);
+                    var coordinatesString = fileName.Split('_').ToList();
+                    List<int> coorOffsetList = new List<int>();
+                    foreach (var coordinates in coordinatesString)
+                    {
+                        coorOffsetList.Add(int.Parse(coordinates));
+                    }
+
+                    //
+                    // Calculate offset coordinates.
+                    var tlX = coorOffsetList[0] = 0 - coorOffsetList[0];
+                    var tlY = coorOffsetList[1] = 0 - coorOffsetList[1];
+                    var brX = coorOffsetList[2] = imageWidth - coorOffsetList[2];
+                    var brY = coorOffsetList[3] = imageHeight - coorOffsetList[3];
+
                     Sample sample = new Sample();
-                    sample.Label = label;
-                    sample.Path = imagePath;
-                    sample.Frame = new Frame(tlX, tlY, blX, brY);
+                    sample.Object = label;
+                    sample.FramePath = imagePath;
+                    sample.Position = new Frame(tlX, tlY, brX, brY);
                     trainingSamples.Add(sample);
                 }
             }
@@ -111,8 +126,8 @@ namespace InvariantLearning_FrameCheck
             // Creating the testing frames for each images and put them in folders.
             string extractedFrameFolderTest = Path.Combine(experimentFolder, "extractedFrameTesting");
             Utility.CreateFolderIfNotExist(extractedFrameFolderTest);
-            listOfFrame = Frame.GetConvFrames(100, 100, 4, 4, 25, 25);
-            //listOfFrame = Frame.GetConvFramesbyPixel(100, 100, 4, 4, 2);
+            //listOfFrame = Frame.GetConvFrames(80, 80, frameWidth, frameHeight, 10, 10);
+            listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 4);
             index = 0;
             foreach (var testImage in scaledTestSet.Images)
             {
@@ -137,99 +152,321 @@ namespace InvariantLearning_FrameCheck
                 index = 0;
             }
 
-            File.WriteAllLines(Path.Combine(extractedFrameFolder, "PixelDensity.txt"), frameDensityList.ToArray());
-            DataSet extractedFrameSet = new DataSet(extractedFrameFolder);
-
-            // Learning the filtered frame set with SP
-            LearningUnit spLayer1 = new LearningUnit(32, 32, 2048, experimentFolder);
-            spLayer1.TrainingNewbornCycle(extractedFrameSet);
-            // spLayer1.TrainingNormal(extractedFrameSet, 1);
-
-            string extractedImageSource = Path.Combine(experimentFolder, "extractedSet");
-            Utility.CreateFolderIfNotExist(extractedImageSource);
-
-            // Saving representation/semantic array with its label in files
-            Dictionary<string, List<int[]>> lib = new Dictionary<string, List<int[]>>();
-
-            foreach (var image in testSet_32x32.Images)
+            //
+            // Create testing samples from the extracted frames.
+            foreach (var classFolder in Directory.GetDirectories(extractedFrameFolderTest))
             {
-                string extractedFrameFolderofImage = Path.Combine(extractedImageSource, $"{image.Label}_{Path.GetFileNameWithoutExtension(image.ImagePath)}");
-                Utility.CreateFolderIfNotExist(extractedFrameFolderofImage);
-                if (!lib.ContainsKey(image.Label))
+                string label = Path.GetFileName(classFolder);
+                foreach (var imagePath in Directory.GetFiles(classFolder))
                 {
-                    lib.Add(image.Label, new List<int[]>());
-                }
-                int[] current = new int[spLayer1.columnDim];
-                foreach (var frame in listOfFrame)
-                {
-                    if (image.IsRegionInDensityRange(frame, 30, 80))
-                    {
-                        string frameImage = Path.Combine(extractedFrameFolderofImage, $"{frame.tlX}-{frame.tlY}_{frame.brX}-{frame.brY}.png");
-                        image.SaveTo(frameImage, frame, true);
-                        int[] a = spLayer1.Predict(frameImage);
-                        current = Utility.AddArray(current, a);
-                    }
-                }
-                lib[image.Label].Add(current);
-            }
-
-            foreach (var a in lib)
-            {
-                using (StreamWriter sw = new StreamWriter(Path.Combine(extractedImageSource, $"{a.Key}.txt")))
-                {
-                    foreach (var s in a.Value)
-                    {
-                        sw.WriteLine(string.Join(',', s));
-                    }
+                    var fileName = Path.GetFileNameWithoutExtension(imagePath);
+                    var coordinates = fileName.Split('_');
+                    var tlX = int.Parse(coordinates[0]);
+                    var tlY = int.Parse(coordinates[1]);
+                    var blX = int.Parse(coordinates[2]);
+                    var brY = int.Parse(coordinates[3]);
+                    Sample sample = new Sample();
+                    sample.Object = label;
+                    sample.FramePath = imagePath;
+                    sample.Position = new Frame(tlX, tlY, blX, brY);
+                    testingSamples.Add(sample);
                 }
             }
+            #endregion
 
-            // Testing section, caculate accuracy
-            string testFolder = Path.Combine(experimentFolder, "Test");
-            Utility.CreateFolderIfNotExist(testFolder);
-            int match = 0;
-            //listOfFrame = Frame.GetConvFrames(100, 100, 4, 4, 25, 25);
-            listOfFrame = Frame.GetConvFramesbyPixel(100, 100, 4, 4, 2);
-            foreach (var testImage in scaledTestSet.Images)
+            #region Config
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(InvariantRepresentation)}");
+
+            int inputBits = 256;
+            int numColumns = 1024;
+
+            HtmConfig cfg = new HtmConfig(new int[] { inputBits }, new int[] { numColumns })
             {
-                string testImageFolder = Path.Combine(testFolder, $"{testImage.Label}_{Path.GetFileNameWithoutExtension(testImage.ImagePath)}");
-                Utility.CreateFolderIfNotExist(testImageFolder);
-                testImage.SaveTo(Path.Combine(testImageFolder, "origin.png"));
+                Random = new ThreadSafeRandom(42),
 
-                int[] current = new int[spLayer1.columnDim];
-                foreach (var frame in listOfFrame)
-                {
-                    string frameImage = Path.Combine(testImageFolder, $"{frame.tlX}-{frame.tlY}_{frame.brX}-{frame.brY}.png");
-                    testImage.SaveTo(frameImage, frame, true);
-                    if (testImage.IsRegionInDensityRange(frame, 30, 80))
-                    {
-                        current = Utility.AddArray(current, spLayer1.Predict(frameImage));
-                    }
-                }
-                string actualLabel = testImage.Label;
-                string predictedLabel = "";
-                double lowestMatch = 10000;
-                foreach (var digitClass in lib)
-                {
-                    string currentLabel = digitClass.Key;
-                    foreach (var entry in digitClass.Value)
-                    {
-                        double arrayGeometricDistance = Utility.CalArrayUnion(entry, current);
-                        if (arrayGeometricDistance < lowestMatch)
-                        {
-                            predictedLabel = currentLabel;
-                            lowestMatch = arrayGeometricDistance;
-                        }
-                    }
-                }
+                CellsPerColumn = 25,
+                GlobalInhibition = true,
+                LocalAreaDensity = -1,
+                NumActiveColumnsPerInhArea = 0.02 * numColumns,
+                PotentialRadius = (int)(0.15 * inputBits),
+                //InhibitionRadius = 15,
 
-                if (actualLabel == predictedLabel)
+                MaxBoost = 10.0,
+                DutyCyclePeriod = 25,
+                MinPctOverlapDutyCycles = 0.75,
+                MaxSynapsesPerSegment = (int)(0.02 * numColumns),
+
+                ActivationThreshold = 15,
+                ConnectedPermanence = 0.5,
+
+                // Learning is slower than forgetting in this case.
+                PermanenceDecrement = 0.25,
+                PermanenceIncrement = 0.15,
+
+                // Used by punishing of segments.
+                PredictedSegmentDecrement = 0.1
+            };
+
+            // IMAGE ENCODER
+            ImageEncoder imgEncoder = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
+            {
+                Inverse = false,
+                ImageHeight = 16,
+                ImageWidth = 16,
+                GreyScale = true,
+            });
+
+            #endregion
+
+            #region Run experiment
+            var mem = new Connections(cfg);
+
+            bool isInStableState = false;
+
+            HtmClassifier<string, ComputeCycle> cls = new HtmClassifier<string, ComputeCycle>();
+
+            var numUniqueInputs = trainingSamples.Count;
+
+            CortexLayer<object, object> layer1 = new CortexLayer<object, object>("L1");
+
+            // For more information see following paper: https://www.scitepress.org/Papers/2021/103142/103142.pdf
+            HomeostaticPlasticityController hpc = new HomeostaticPlasticityController(mem, numUniqueInputs * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
+            {
+                if (isStable)
+                    // Event should be fired when entering the stable state.
+                    Debug.WriteLine($"STABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
+                else
+                    // Ideal SP should never enter unstable state after stable state.
+                    Debug.WriteLine($"INSTABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
+
+                // We are not learning in instable state.
+                isInStableState = isStable;
+
+                // Clear active and predictive cells.
+                //tm.Reset(mem);
+            }, numOfCyclesToWaitOnChange: 50);
+
+
+            SpatialPooler sp = new SpatialPooler(hpc);
+            sp.Init(mem);
+            //tm.Init(mem);
+
+            layer1.HtmModules.Add("encoder", imgEncoder);
+            layer1.HtmModules.Add("sp", sp);
+
+            //double[] inputs = inputValues.ToArray();
+            int[] prevActiveCols = new int[0];
+
+            int cycle = 0;
+            int matches = 0;
+
+            var lastPredictedValues = new List<string>(new string[] { "0" });
+
+            int maxCycles = 3500;
+
+            //
+            // Training SP to get stable. New-born stage.
+            for (int i = 0; i < maxCycles && isInStableState == false; i++)
+            {
+                matches = 0;
+
+                cycle++;
+
+                Debug.WriteLine($"-------------- Newborn Cycle {cycle} ---------------");
+
+                foreach (var trainingSample in trainingSamples)
                 {
-                    match += 1;
+                    var lyrOut1 = layer1.Compute(trainingSample.FramePath, true);
+                    var activeColumns = layer1.GetResult("sp") as int[];
+
+                    if (isInStableState)
+                        break;
                 }
-                Debug.WriteLine($"{actualLabel} predicted as {predictedLabel}");
             }
-            Debug.WriteLine($"accuracy equals {(double)(((double)match) / ((double)scaledTestSet.Count))}");
+
+
+            //
+            // Add the stable SDRs to samples.
+            foreach (var trainingSample in trainingSamples)
+            {
+                var lyrOut1 = layer1.Compute(trainingSample.FramePath, false);
+                var activeColumns = layer1.GetResult("sp") as int[];
+
+                if (activeColumns != null)
+                {
+                    trainingSample.PixelIndicies = new int[activeColumns.Length];
+                    trainingSample.PixelIndicies = activeColumns;
+                }
+            }
+            cls.LearnObj(trainingSamples);
+
+            //
+            // Create and add SDRs for the testing samples.
+            foreach (var testingSample in testingSamples)
+            {
+                var lyrOut1 = layer1.Compute(testingSample.FramePath, false);
+                var activeColumns = layer1.GetResult("sp") as int[];
+
+                if (activeColumns != null)
+                {
+                    testingSample.PixelIndicies = new int[activeColumns.Length];
+                    testingSample.PixelIndicies = activeColumns;
+                }
+            }
+
+            //
+            // Classifying each testing sample.
+            var testingSamplesDict = testingSamples.Select(x => x).GroupBy(x => x.Object).ToDictionary(group => group.Key, group => group.ToList());
+            foreach (var item in testingSamplesDict)
+            {
+                var predictedObj = cls.PredictObj(item.Value, 3);
+                if (predictedObj.Equals(item.Key))
+                {
+                    var a = 1;
+                }
+            }
+
+            //
+            // Validation
+            //double accuracyShape = 0;
+            //double accuracyParity = 0;
+            //int matchShape = 0;
+            //int matchParity = 0;
+
+            //foreach (var sample in testingSamples)
+            //{
+            //    var lyrOut3 = layer3.Compute(sample.Feature["object"], false);
+
+            //    var lyrOutTest = layer1.Compute(sample.Feature["shape"], false);
+            //    var actColumns = layer1.GetResult("sp") as int[];
+            //    var predictedObjs = cls.GetPredictedObj(actColumns, 5);
+
+            //    foreach (var obj in predictedObjs)
+            //    {
+            //        if (obj.ToString().Equals(lyrOut3.ToString()))
+            //        {
+            //            matchShape++;
+            //        }
+            //    }
+
+            //    //cls.ResetSelectedObjs();
+
+            //    lyrOutTest = layer2.Compute(sample.Feature["parity"].ToString(), false);
+            //    actColumns = layer2.GetResult("sp") as int[];
+            //    predictedObjs = cls.GetPredictedObj(actColumns, 5);
+
+            //    foreach (var obj in predictedObjs)
+            //    {
+            //        if (obj.ToString().Equals(lyrOut3.ToString()))
+            //        {
+            //            matchParity++;
+            //        }
+            //    }
+
+            //    cls.ResetSelectedObjs();
+            //}
+            //accuracyShape = (double)matchShape / (double)testingSamples.Count() * 100;
+            //accuracyParity = (double)matchParity / (double)testingSamples.Count() * 100;
+
+            //Debug.WriteLine($"accuracyShape: {accuracyShape}");
+            //Debug.WriteLine($"accuracyParity: {accuracyParity}");
+
+            Debug.WriteLine("------------ END ------------");
+            #endregion
+
+            //File.WriteAllLines(Path.Combine(extractedFrameFolder, "PixelDensity.txt"), frameDensityList.ToArray());
+            //DataSet extractedFrameSet = new DataSet(extractedFrameFolder);
+
+            //// Learning the filtered frame set with SP
+            //LearningUnit spLayer1 = new LearningUnit(32, 32, 2048, experimentFolder);
+            //spLayer1.TrainingNewbornCycle(extractedFrameSet);
+            //// spLayer1.TrainingNormal(extractedFrameSet, 1);
+
+            //string extractedImageSource = Path.Combine(experimentFolder, "extractedSet");
+            //Utility.CreateFolderIfNotExist(extractedImageSource);
+
+            //// Saving representation/semantic array with its label in files
+            //Dictionary<string, List<int[]>> lib = new Dictionary<string, List<int[]>>();
+
+            //foreach (var image in testSet_32x32.Images)
+            //{
+            //    string extractedFrameFolderofImage = Path.Combine(extractedImageSource, $"{image.Label}_{Path.GetFileNameWithoutExtension(image.ImagePath)}");
+            //    Utility.CreateFolderIfNotExist(extractedFrameFolderofImage);
+            //    if (!lib.ContainsKey(image.Label))
+            //    {
+            //        lib.Add(image.Label, new List<int[]>());
+            //    }
+            //    int[] current = new int[spLayer1.columnDim];
+            //    foreach (var frame in listOfFrame)
+            //    {
+            //        if (image.IsRegionInDensityRange(frame, 30, 80))
+            //        {
+            //            string frameImage = Path.Combine(extractedFrameFolderofImage, $"{frame.tlX}-{frame.tlY}_{frame.brX}-{frame.brY}.png");
+            //            image.SaveTo(frameImage, frame, true);
+            //            int[] a = spLayer1.Predict(frameImage);
+            //            current = Utility.AddArray(current, a);
+            //        }
+            //    }
+            //    lib[image.Label].Add(current);
+            //}
+
+            //foreach (var a in lib)
+            //{
+            //    using (StreamWriter sw = new StreamWriter(Path.Combine(extractedImageSource, $"{a.Key}.txt")))
+            //    {
+            //        foreach (var s in a.Value)
+            //        {
+            //            sw.WriteLine(string.Join(',', s));
+            //        }
+            //    }
+            //}
+
+            //// Testing section, caculate accuracy
+            //string testFolder = Path.Combine(experimentFolder, "Test");
+            //Utility.CreateFolderIfNotExist(testFolder);
+            //int match = 0;
+            ////listOfFrame = Frame.GetConvFrames(100, 100, 4, 4, 25, 25);
+            //listOfFrame = Frame.GetConvFramesbyPixel(100, 100, 4, 4, 2);
+            //foreach (var testImage in scaledTestSet.Images)
+            //{
+            //    string testImageFolder = Path.Combine(testFolder, $"{testImage.Label}_{Path.GetFileNameWithoutExtension(testImage.ImagePath)}");
+            //    Utility.CreateFolderIfNotExist(testImageFolder);
+            //    testImage.SaveTo(Path.Combine(testImageFolder, "origin.png"));
+
+            //    int[] current = new int[spLayer1.columnDim];
+            //    foreach (var frame in listOfFrame)
+            //    {
+            //        string frameImage = Path.Combine(testImageFolder, $"{frame.tlX}-{frame.tlY}_{frame.brX}-{frame.brY}.png");
+            //        testImage.SaveTo(frameImage, frame, true);
+            //        if (testImage.IsRegionInDensityRange(frame, 30, 80))
+            //        {
+            //            current = Utility.AddArray(current, spLayer1.Predict(frameImage));
+            //        }
+            //    }
+            //    string actualLabel = testImage.Label;
+            //    string predictedLabel = "";
+            //    double lowestMatch = 10000;
+            //    foreach (var digitClass in lib)
+            //    {
+            //        string currentLabel = digitClass.Key;
+            //        foreach (var entry in digitClass.Value)
+            //        {
+            //            double arrayGeometricDistance = Utility.CalArrayUnion(entry, current);
+            //            if (arrayGeometricDistance < lowestMatch)
+            //            {
+            //                predictedLabel = currentLabel;
+            //                lowestMatch = arrayGeometricDistance;
+            //            }
+            //        }
+            //    }
+
+            //    if (actualLabel == predictedLabel)
+            //    {
+            //        match += 1;
+            //    }
+            //    Debug.WriteLine($"{actualLabel} predicted as {predictedLabel}");
+            //}
+            //Debug.WriteLine($"accuracy equals {(double)(((double)match) / ((double)scaledTestSet.Count))}");
         }
 
         private static void SPCapacityTest()
