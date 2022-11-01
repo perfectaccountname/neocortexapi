@@ -53,8 +53,8 @@ namespace InvariantLearning_FrameCheck
             DataSet scaledTestSet = DataSet.CreateTestSet(testSet_32x32, 100, 100, Path.Combine(experimentFolder, "testSet_32x32"));
 
             // write extracted/filtered frame from 32x32 dataset into 4x4 for SP to learn all pattern
-            //var listOfFrame = Frame.GetConvFrames(imageWidth, imageHeight, frameWidth, frameHeight, 4, 4);
-            var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 4);
+            var listOfFrame = Frame.GetConvFrames(imageWidth, imageHeight, frameWidth, frameHeight, 4, 4);
+            //var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 2);
             string extractedFrameFolder = Path.Combine(experimentFolder, "extractedFrameTraining");
             string extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
             int index = 0;
@@ -65,10 +65,10 @@ namespace InvariantLearning_FrameCheck
             foreach (var image in sourceSet_32x32.Images)
             {
                 Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolder, $"{image.Label}"));
-                Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{image.Label}"));
+                //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{image.Label}"));
                 foreach (var frame in listOfFrame)
                 {
-                    if (image.IsRegionInDensityRange(frame, 30, 80))
+                    if (image.IsRegionInDensityRange(frame, 20, 80))
                     {
                         //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolder, $"{index}" ));
                         if (!DataSet.ExistImageInDataSet(image, extractedFrameFolder, frame))
@@ -79,10 +79,10 @@ namespace InvariantLearning_FrameCheck
                             //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{index}", $"{index}_ori.png");
 
                             string savePath = Path.Combine(extractedFrameFolder, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
-                            string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}_ori.png");
+                            //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}_ori.png");
 
                             image.SaveTo(savePath, frame, true);
-                            image.SaveTo(savePathOri, frame);
+                            //image.SaveTo(savePathOri, frame);
 
                             frameDensityList.Add($"pattern {index}, Pixel Density {image.FrameDensity(frame, 255 / 2) * 100}");
                             index += 1;
@@ -126,16 +126,15 @@ namespace InvariantLearning_FrameCheck
             // Creating the testing frames for each images and put them in folders.
             string extractedFrameFolderTest = Path.Combine(experimentFolder, "extractedFrameTesting");
             Utility.CreateFolderIfNotExist(extractedFrameFolderTest);
-            //listOfFrame = Frame.GetConvFrames(80, 80, frameWidth, frameHeight, 10, 10);
-            listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 4);
+            listOfFrame = Frame.GetConvFrames(80, 80, frameWidth, frameHeight, 10, 10);
+            //listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 2);
             index = 0;
             foreach (var testImage in scaledTestSet.Images)
             {
                 Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderTest, $"{testImage.Label}"));
-                Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderTest, $"{testImage.Label}"));
                 foreach (var frame in listOfFrame)
                 {
-                    if (testImage.IsRegionInDensityRange(frame, 30, 80))
+                    if (testImage.IsRegionInDensityRange(frame, 20, 80))
                     {
                         if (!DataSet.ExistImageInDataSet(testImage, extractedFrameFolder, frame))
                         {
@@ -258,30 +257,27 @@ namespace InvariantLearning_FrameCheck
             int[] prevActiveCols = new int[0];
 
             int cycle = 0;
-            int matches = 0;
 
             var lastPredictedValues = new List<string>(new string[] { "0" });
 
-            int maxCycles = 3500;
+            int maxCycles = 200;
 
             //
             // Training SP to get stable. New-born stage.
-            for (int i = 0; i < maxCycles && isInStableState == false; i++)
+            for (int i = 0; i < maxCycles /*&& isInStableState == false*/; i++)
             {
-                matches = 0;
-
-                cycle++;
-
                 Debug.WriteLine($"-------------- Newborn Cycle {cycle} ---------------");
 
                 foreach (var trainingSample in trainingSamples)
                 {
                     var lyrOut1 = layer1.Compute(trainingSample.FramePath, true);
-                    var activeColumns = layer1.GetResult("sp") as int[];
-
-                    if (isInStableState)
-                        break;
+                    //var activeColumns = layer1.GetResult("sp") as int[];
                 }
+                if (isInStableState)
+                {
+                    break;
+                }
+                cycle++;
             }
 
 
@@ -320,9 +316,14 @@ namespace InvariantLearning_FrameCheck
             foreach (var item in testingSamplesDict)
             {
                 var predictedObj = cls.PredictObj(item.Value, 3);
+                int match = 0;
                 if (predictedObj.Equals(item.Key))
                 {
-                    var a = 1;
+                    match++;
+                    if (match == 10)
+                    {
+                        var a = "success";
+                    }
                 }
             }
 
