@@ -53,6 +53,7 @@ namespace NeoCortexApi.Classifiers
         /// </summary>
         private Dictionary<TIN, List<int[]>> m_AllInputs = new Dictionary<TIN, List<int[]>>();
         private List<Sample> m_AllSamples = new List<Sample>();
+        private List<Sample> m_WinnerSamples = new List<Sample>();
 
         /// <summary>
         /// Recording of all SDRs. See maxRecordedElements.
@@ -256,7 +257,7 @@ namespace NeoCortexApi.Classifiers
             m_AllSamples.AddRange(trainingSamples);
         }
 
-        public string PredictObj(List<Sample> testingSamples, int howManyFeatures)
+        public List<Sample> PredictObj(List<Sample> testingSamples, int howManyFeatures)
         {
             foreach (var testingSample in testingSamples)
             {
@@ -269,31 +270,67 @@ namespace NeoCortexApi.Classifiers
 
             int maxScore = 0;
             string winner = "unkown";
+            Frame frame = new Frame(0, 0, 0, 0);
+            Sample winnerSample = new Sample();
             foreach (var objDict in selectedDict)
             {
-                foreach (var sampleOuter in objDict.Value)
+                int score = 0;
+                for (var i = 0; i < objDict.Value.Count; i++)
                 {
-                    foreach (var sampleInner in objDict.Value)
+                    for (var j = i + 1; j < objDict.Value.Count; j++)
                     {
-                        int score = 0;
-                        if ((Math.Abs(sampleOuter.Position.tlX - sampleInner.Position.tlX) <= 2)
-                            && (Math.Abs(sampleOuter.Position.tlY - sampleInner.Position.tlY) <= 2))
+                        if ((Math.Abs(objDict.Value[i].Position.tlX - objDict.Value[j].Position.tlX) < 2)
+                            && (Math.Abs(objDict.Value[i].Position.tlY - objDict.Value[j].Position.tlY) < 2))
                         {
                             score++;
                             if (score > maxScore)
                             {
                                 maxScore = score;
-                                winner = sampleInner.Object;
+                                if(winner != objDict.Key)
+                                {
+                                    frame.tlX = 0;
+                                    frame.tlY = 0;
+                                    frame.brX = 0;
+                                    frame.brY = 0;
+                                }
+                                else
+                                {
+                                    frame.tlX = (frame.tlX + objDict.Value[j].Position.tlX) / 2;
+                                    frame.tlY = (frame.tlY + objDict.Value[j].Position.tlY) / 2;
+                                    frame.brX = (frame.brX + objDict.Value[j].Position.brX) / 2;
+                                    frame.brY = (frame.brY + objDict.Value[j].Position.brY) / 2;
+                                }
+                                winner = objDict.Key;
                             }
-
                         }
                     }
                 }
+                //foreach (var sampleOuter in objDict.Value)
+                //{
+                //    foreach (var sampleInner in objDict.Value)
+                //    {
+                //        int score = 0;
+                //        if ((Math.Abs(sampleOuter.Position.tlX - sampleInner.Position.tlX) <= 2)
+                //            && (Math.Abs(sampleOuter.Position.tlY - sampleInner.Position.tlY) <= 2))
+                //        {
+                //            score++;
+                //            if (score > maxScore)
+                //            {
+                //                maxScore = score;
+                //                winner = sampleInner.Object;
+                //            }
+
+                //        }
+                //    }
+                //}
             }
+            winnerSample.Object = winner;
+            winnerSample.Position = frame;
+            m_WinnerSamples.Add(winnerSample);
 
             m_SelectedSamples.Clear();
 
-            return winner;
+            return m_WinnerSamples;
         }
 
         //public void PredictObj(List<Sample> testingSamples, int howManyFeatures)
@@ -351,14 +388,30 @@ namespace NeoCortexApi.Classifiers
                         Sample sample = new Sample() { FramePath = "" };
                         sample.Object = trainingSample.Object;
                         sample.PixelIndicies = trainingSample.PixelIndicies;
-                        Frame frame = new Frame(1, 1, 1, 1);
                         sample.Position = new Frame(
                             testingSample.Position.tlX + trainingSample.Position.tlX,
                             testingSample.Position.tlY + trainingSample.Position.tlY,
                             testingSample.Position.brX + trainingSample.Position.brX,
                             testingSample.Position.brY + trainingSample.Position.brY
                         );
+
                         m_SelectedSamples.Add(sample);
+
+                        //bool isAdd = true;
+                        //foreach (var selectedSample in m_SelectedSamples)
+                        //{
+                        //    bool isSamePos = selectedSample.Position.tlX == sample.Position.tlX &&
+                        //        selectedSample.Position.tlY == sample.Position.tlY;
+                        //    if (selectedSample.Object.Equals(sample.Object) && isSamePos)
+                        //    {
+                        //        isAdd = false;
+                        //        break;
+                        //    }
+                        //}
+                        //if (isAdd)
+                        //{
+                        //    m_SelectedSamples.Add(sample);
+                        //}
                     }
                 }
             }
@@ -373,17 +426,19 @@ namespace NeoCortexApi.Classifiers
             List<int[]> results = new List<int[]>();
             foreach (var trainingIndicies in trainingSamplesIndicies)
             {
-                    var numOfSameBitsPct = testingSamplesIndicies.Intersect(trainingIndicies).Count();
-
-                    if (numOfSameBitsPct >= maxSameBits)
-                    {
-                        maxSameBits = numOfSameBitsPct;
-                        results.Add(trainingIndicies);
-                    }
+                var numOfSameBitsPct = testingSamplesIndicies.Intersect(trainingIndicies).Count();
+                int numOfBits = trainingIndicies.Count();
+                double similarity = ((double) numOfSameBitsPct/ (double) numOfBits)*100;
+                
+                if (numOfSameBitsPct >= maxSameBits /*similarity >= 50*/)
+                {
+                    maxSameBits = numOfSameBitsPct;
+                    results.Add(trainingIndicies);
+                }
             }
 
             //
-            // Remove redundant entries.
+            //Remove redundant entries.
             if (results.Count > maxFeatures)
             {
                 results.RemoveRange(0, results.Count - maxFeatures);
