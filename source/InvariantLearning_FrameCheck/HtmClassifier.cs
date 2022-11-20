@@ -291,21 +291,21 @@ namespace NeoCortexApi.Classifiers
                                 maxScore = score;
                                 secondWinner = firstWinner;
                                 thirdWinner = secondWinner;
-                                if (firstWinner != objDict.Key)
-                                {
-                                    frame.tlX = 0;
-                                    frame.tlY = 0;
-                                    frame.brX = 0;
-                                    frame.brY = 0;
-                                }
-                                else
-                                {
-                                    frame.tlX = (frame.tlX + objDict.Value[j].Position.tlX) / 2;
-                                    frame.tlY = (frame.tlY + objDict.Value[j].Position.tlY) / 2;
-                                    frame.brX = (frame.brX + objDict.Value[j].Position.brX) / 2;
-                                    frame.brY = (frame.brY + objDict.Value[j].Position.brY) / 2;
-                                }
-                                firstWinner = objDict.Key;
+                                //if (firstWinner != objDict.Key)
+                                //{
+                                //    frame.tlX = 0;
+                                //    frame.tlY = 0;
+                                //    frame.brX = 0;
+                                //    frame.brY = 0;
+                                //}
+                                //else
+                                //{
+                                //    frame.tlX = (frame.tlX + objDict.Value[j].Position.tlX) / 2;
+                                //    frame.tlY = (frame.tlY + objDict.Value[j].Position.tlY) / 2;
+                                //    frame.brX = (frame.brX + objDict.Value[j].Position.brX) / 2;
+                                //    frame.brY = (frame.brY + objDict.Value[j].Position.brY) / 2;
+                                //}
+                                //firstWinner = objDict.Key;
                             }
                         }
                     }
