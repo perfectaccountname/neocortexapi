@@ -265,11 +265,14 @@ namespace NeoCortexApi.Classifiers
 
                 AddSelectedSamples(testingSample, matchingFeatureList);
             }
+            //m_SelectedSamples = m_SelectedSamples.GroupBy(x => x.PixelIndicies).Select(y => y.First()).ToList();
 
             var selectedDict = m_SelectedSamples.Select(x => x).GroupBy(x => x.Object).ToDictionary(group => group.Key, group => group.ToList());
 
             int maxScore = 0;
-            string winner = "unkown";
+            string firstWinner = "unkown";
+            string secondWinner = "unkown";
+            string thirdWinner = "unkown";
             Frame frame = new Frame(0, 0, 0, 0);
             Sample winnerSample = new Sample();
             foreach (var objDict in selectedDict)
@@ -279,14 +282,16 @@ namespace NeoCortexApi.Classifiers
                 {
                     for (var j = i + 1; j < objDict.Value.Count; j++)
                     {
-                        if ((Math.Abs(objDict.Value[i].Position.tlX - objDict.Value[j].Position.tlX) < 2)
-                            && (Math.Abs(objDict.Value[i].Position.tlY - objDict.Value[j].Position.tlY) < 2))
+                        if ((Math.Abs(objDict.Value[i].Position.tlX - objDict.Value[j].Position.tlX) <= 1)
+                            && (Math.Abs(objDict.Value[i].Position.tlY - objDict.Value[j].Position.tlY) <= 1))
                         {
                             score++;
                             if (score > maxScore)
                             {
                                 maxScore = score;
-                                if(winner != objDict.Key)
+                                secondWinner = firstWinner;
+                                thirdWinner = secondWinner;
+                                if (firstWinner != objDict.Key)
                                 {
                                     frame.tlX = 0;
                                     frame.tlY = 0;
@@ -300,7 +305,7 @@ namespace NeoCortexApi.Classifiers
                                     frame.brX = (frame.brX + objDict.Value[j].Position.brX) / 2;
                                     frame.brY = (frame.brY + objDict.Value[j].Position.brY) / 2;
                                 }
-                                winner = objDict.Key;
+                                firstWinner = objDict.Key;
                             }
                         }
                     }
@@ -324,7 +329,7 @@ namespace NeoCortexApi.Classifiers
                 //    }
                 //}
             }
-            winnerSample.Object = winner;
+            winnerSample.Object = firstWinner;
             winnerSample.Position = frame;
             m_WinnerSamples.Add(winnerSample);
 
@@ -394,27 +399,35 @@ namespace NeoCortexApi.Classifiers
                             testingSample.Position.brX + trainingSample.Position.brX,
                             testingSample.Position.brY + trainingSample.Position.brY
                         );
-
                         m_SelectedSamples.Add(sample);
 
-                        //bool isAdd = true;
-                        //foreach (var selectedSample in m_SelectedSamples)
+                        //if (m_SelectedSamples.Count() > 0)
                         //{
-                        //    bool isSamePos = selectedSample.Position.tlX == sample.Position.tlX &&
-                        //        selectedSample.Position.tlY == sample.Position.tlY;
-                        //    if (selectedSample.Object.Equals(sample.Object) && isSamePos)
+                        //    bool isAdd = true;
+                        //    foreach (var localSample in m_SelectedSamples)
                         //    {
-                        //        isAdd = false;
-                        //        break;
+                        //        var numOfSameBitsPct = localSample.PixelIndicies.Intersect(sample.PixelIndicies).Count();
+                        //        int numOfBits = sample.PixelIndicies.Count();
+                        //        double similarity = ((double)numOfSameBitsPct / (double)numOfBits) * 100;
+                        //        if (similarity > 50)
+                        //        {
+                        //            isAdd = false;
+                        //            break;
+                        //        }
+                        //    }
+                        //    if(isAdd)
+                        //    {
+                        //        m_SelectedSamples.Add(sample);
                         //    }
                         //}
-                        //if (isAdd)
+                        //else
                         //{
                         //    m_SelectedSamples.Add(sample);
                         //}
                     }
                 }
             }
+            m_SelectedSamples = m_SelectedSamples.GroupBy(x => x.PixelIndicies).Select(y => y.First()).ToList();
         }
 
         /// <summary>
@@ -439,10 +452,10 @@ namespace NeoCortexApi.Classifiers
 
             //
             //Remove redundant entries.
-            if (results.Count > maxFeatures)
-            {
-                results.RemoveRange(0, results.Count - maxFeatures);
-            }
+            //if (results.Count > maxFeatures)
+            //{
+            //    results.RemoveRange(0, results.Count - maxFeatures);
+            //}
 
             return results;
         }

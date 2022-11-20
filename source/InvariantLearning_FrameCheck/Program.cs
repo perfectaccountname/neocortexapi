@@ -54,7 +54,7 @@ namespace InvariantLearning_FrameCheck
 
             // write extracted/filtered frame from 32x32 dataset into 4x4 for SP to learn all pattern
             //var listOfFrame = Frame.GetConvFrames(imageWidth, imageHeight, frameWidth, frameHeight, 4, 4);
-            var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 4);
+            var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 2);
             string extractedFrameFolder = Path.Combine(experimentFolder, "extractedFrameTraining");
             string extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
             int index = 0;
@@ -127,11 +127,11 @@ namespace InvariantLearning_FrameCheck
             string extractedFrameFolderTest = Path.Combine(experimentFolder, "extractedFrameTesting");
             Utility.CreateFolderIfNotExist(extractedFrameFolderTest);
             //listOfFrame = Frame.GetConvFrames(80, 80, frameWidth, frameHeight, 10, 10);
-            listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 4);
+            listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 2);
             index = 0;
             foreach (var testImage in scaledTestSet.Images)
             {
-                Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderTest, $"{testImage.Label}"));
+                Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderTest, $"{testImage.ImagePath.Substring(testImage.ImagePath.Length - 5, 1)}", $"{testImage.Label}"));
                 foreach (var frame in listOfFrame)
                 {
                     if (testImage.IsRegionInDensityRange(frame, 30, 50))
@@ -139,7 +139,7 @@ namespace InvariantLearning_FrameCheck
                         if (!DataSet.ExistImageInDataSet(testImage, extractedFrameFolderTest, frame))
                         {
 
-                            string savePath = Path.Combine(extractedFrameFolderTest, $"{testImage.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
+                            string savePath = Path.Combine(extractedFrameFolderTest, $"{testImage.ImagePath.Substring(testImage.ImagePath.Length - 5, 1)}", $"{testImage.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
 
                             testImage.SaveTo(savePath, frame, true);
 
@@ -151,26 +151,6 @@ namespace InvariantLearning_FrameCheck
                 index = 0;
             }
 
-            //
-            // Create testing samples from the extracted frames.
-            foreach (var classFolder in Directory.GetDirectories(extractedFrameFolderTest))
-            {
-                string label = Path.GetFileName(classFolder);
-                foreach (var imagePath in Directory.GetFiles(classFolder))
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(imagePath);
-                    var coordinates = fileName.Split('_');
-                    var tlX = int.Parse(coordinates[0]);
-                    var tlY = int.Parse(coordinates[1]);
-                    var blX = int.Parse(coordinates[2]);
-                    var brY = int.Parse(coordinates[3]);
-                    Sample sample = new Sample();
-                    sample.Object = label;
-                    sample.FramePath = imagePath;
-                    sample.Position = new Frame(tlX, tlY, blX, brY);
-                    testingSamples.Add(sample);
-                }
-            }
             #endregion
 
             #region Config
@@ -278,13 +258,11 @@ namespace InvariantLearning_FrameCheck
                 if (isInStableState)
                 {
                     sw.Stop();
-                    var elapsedTime = sw.Elapsed;
-                    
+                    var elapsedTime = sw.Elapsed;            
                     break;
                 }
                 cycle++;
             }
-
 
             //
             // Add the stable SDRs to samples.
@@ -302,34 +280,61 @@ namespace InvariantLearning_FrameCheck
             cls.LearnObj(trainingSamples);
 
             //
-            // Create and add SDRs for the testing samples.
-            foreach (var testingSample in testingSamples)
+            // Create testing samples from the extracted frames.
+            string[] directories = System.IO.Directory.GetDirectories(extractedFrameFolderTest, "*", System.IO.SearchOption.TopDirectoryOnly);
+            foreach (string directory in directories)
             {
-                var lyrOut1 = layer1.Compute(testingSample.FramePath, false);
-                var activeColumns = layer1.GetResult("sp") as int[];
-
-                if (activeColumns != null)
+                foreach (var classFolder in Directory.GetDirectories(directory))
                 {
-                    testingSample.PixelIndicies = new int[activeColumns.Length];
-                    testingSample.PixelIndicies = activeColumns;
+                    string label = Path.GetFileName(classFolder);
+                    foreach (var imagePath in Directory.GetFiles(classFolder))
+                    {
+                        var fileName = Path.GetFileNameWithoutExtension(imagePath);
+                        var coordinates = fileName.Split('_');
+                        var tlX = int.Parse(coordinates[0]);
+                        var tlY = int.Parse(coordinates[1]);
+                        var blX = int.Parse(coordinates[2]);
+                        var brY = int.Parse(coordinates[3]);
+                        Sample sample = new Sample();
+                        sample.Object = label;
+                        sample.FramePath = imagePath;
+                        sample.Position = new Frame(tlX, tlY, blX, brY);
+                        testingSamples.Add(sample);
+                    }
                 }
-            }
 
-            //
-            // Classifying each testing sample.
-            var testingSamplesDict = testingSamples.Select(x => x).GroupBy(x => x.Object).ToDictionary(group => group.Key, group => group.ToList());
-            foreach (var item in testingSamplesDict)
-            {
-                var predictedObj = cls.PredictObj(item.Value, 5);
-                //int match = 0;
-                //if (predictedObj.Equals(item.Key))
-                //{
-                //    match++;
-                //    if (match == 10)
-                //    {
-                //        var a = "success";
-                //    }
-                //}
+                //
+                // Create and add SDRs for the testing samples.
+                foreach (var testingSample in testingSamples)
+                {
+                    var lyrOut1 = layer1.Compute(testingSample.FramePath, false);
+                    var activeColumns = layer1.GetResult("sp") as int[];
+
+                    if (activeColumns != null)
+                    {
+                        testingSample.PixelIndicies = new int[activeColumns.Length];
+                        testingSample.PixelIndicies = activeColumns;
+                    }
+                }
+
+                //
+                // Classifying each testing sample.
+                var testingSamplesDict = testingSamples.Select(x => x).GroupBy(x => x.Object).ToDictionary(group => group.Key, group => group.ToList());
+                foreach (var item in testingSamplesDict)
+                {
+                    var predictedObj = cls.PredictObj(item.Value, 5);
+                    //int match = 0;
+                    //if (predictedObj.Equals(item.Key))
+                    //{
+                    //    match++;
+                    //    if (match == 10)
+                    //    {
+                    //        var a = "success";
+                    //    }
+                    //}
+                }
+                testingSamples.Clear();
+                testingSamplesDict.Clear();
             }
 
             //
