@@ -305,7 +305,7 @@ namespace NeoCortexApi.Classifiers
                                 //    frame.brX = (frame.brX + objDict.Value[j].Position.brX) / 2;
                                 //    frame.brY = (frame.brY + objDict.Value[j].Position.brY) / 2;
                                 //}
-                                //firstWinner = objDict.Key;
+                                firstWinner = objDict.Key;
                             }
                         }
                     }
