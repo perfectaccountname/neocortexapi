@@ -34,6 +34,7 @@ namespace InvariantLearning_FrameCheck
             #region Samples taking
             List<Sample> trainingSamples = new List<Sample>();
             List<Sample> testingSamples = new List<Sample>();
+            List<Sample> mnistSamples = new List<Sample>();
 
             Utility.CreateFolderIfNotExist(experimentFolder);
 
@@ -54,7 +55,7 @@ namespace InvariantLearning_FrameCheck
 
             // write extracted/filtered frame from 32x32 dataset into 4x4 for SP to learn all pattern
             //var listOfFrame = Frame.GetConvFrames(imageWidth, imageHeight, frameWidth, frameHeight, 4, 4);
-            var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 2);
+            var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 4);
             string extractedFrameFolder = Path.Combine(experimentFolder, "extractedFrameTraining");
             string extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
             int index = 0;
@@ -68,7 +69,7 @@ namespace InvariantLearning_FrameCheck
                 //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{image.Label}"));
                 foreach (var frame in listOfFrame)
                 {
-                    if (image.IsRegionInDensityRange(frame, 30, 50))
+                    if (image.IsRegionInDensityRange(frame, 30, 80))
                     {
                         //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolder, $"{index}" ));
                         if (!DataSet.ExistImageInDataSet(image, extractedFrameFolder, frame))
@@ -127,14 +128,14 @@ namespace InvariantLearning_FrameCheck
             string extractedFrameFolderTest = Path.Combine(experimentFolder, "extractedFrameTesting");
             Utility.CreateFolderIfNotExist(extractedFrameFolderTest);
             //listOfFrame = Frame.GetConvFrames(80, 80, frameWidth, frameHeight, 10, 10);
-            listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 2);
+            listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 4);
             index = 0;
             foreach (var testImage in scaledTestSet.Images)
             {
                 Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderTest, $"{testImage.ImagePath.Substring(testImage.ImagePath.Length - 5, 1)}", $"{testImage.Label}"));
                 foreach (var frame in listOfFrame)
                 {
-                    if (testImage.IsRegionInDensityRange(frame, 30, 50))
+                    if (testImage.IsRegionInDensityRange(frame, 30, 80))
                     {
                         if (!DataSet.ExistImageInDataSet(testImage, extractedFrameFolderTest, frame))
                         {
@@ -151,6 +152,25 @@ namespace InvariantLearning_FrameCheck
                 index = 0;
             }
 
+            string[] digits = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+            foreach (var digit in digits)
+            {
+                //
+                // training images.
+                string digitTrainingFolder = Path.Combine(experimentFolder, "sourceSet_32x32", digit);
+                var trainingImages = Directory.GetFiles(digitTrainingFolder);
+
+                foreach (string image in trainingImages)
+                {
+                    Sample sample = new Sample();
+                    var imageName = Path.GetFileName(image);
+                    sample.FramePath = Path.Combine(digitTrainingFolder, imageName);
+                    sample.Object = imageName;
+
+                    mnistSamples.Add(sample);
+                }
+            }
+
             #endregion
 
             #region Config
@@ -159,118 +179,140 @@ namespace InvariantLearning_FrameCheck
             int inputBits = 256;
             int numColumns = 1024;
 
-            HtmConfig cfg = new HtmConfig(new int[] { inputBits }, new int[] { numColumns })
-            {
-                Random = new ThreadSafeRandom(42),
+            //HtmConfig cfg = new HtmConfig(new int[] { inputBits }, new int[] { numColumns })
+            //{
+            //    Random = new ThreadSafeRandom(42),
 
-                CellsPerColumn = 25,
-                GlobalInhibition = true,
-                LocalAreaDensity = -1,
-                NumActiveColumnsPerInhArea = 0.02 * numColumns,
-                PotentialRadius = (int)(0.15 * inputBits),
-                //InhibitionRadius = 15,
+            //    CellsPerColumn = 25,
+            //    GlobalInhibition = true,
+            //    LocalAreaDensity = -1,
+            //    NumActiveColumnsPerInhArea = 0.02 * numColumns,
+            //    PotentialRadius = (int)(0.15 * inputBits),
+            //    //InhibitionRadius = 15,
 
-                MaxBoost = 10.0,
-                DutyCyclePeriod = 25,
-                MinPctOverlapDutyCycles = 0.75,
-                MaxSynapsesPerSegment = (int)(0.02 * numColumns),
+            //    MaxBoost = 10.0,
+            //    DutyCyclePeriod = 25,
+            //    MinPctOverlapDutyCycles = 0.75,
+            //    MaxSynapsesPerSegment = (int)(0.02 * numColumns),
 
-                ActivationThreshold = 15,
-                ConnectedPermanence = 0.5,
+            //    ActivationThreshold = 15,
+            //    ConnectedPermanence = 0.5,
 
-                // Learning is slower than forgetting in this case.
-                PermanenceDecrement = 0.25,
-                PermanenceIncrement = 0.15,
+            //    // Learning is slower than forgetting in this case.
+            //    PermanenceDecrement = 0.25,
+            //    PermanenceIncrement = 0.15,
 
-                // Used by punishing of segments.
-                PredictedSegmentDecrement = 0.1
-            };
+            //    // Used by punishing of segments.
+            //    PredictedSegmentDecrement = 0.1
+            //};
 
-            // IMAGE ENCODER
-            ImageEncoder imgEncoder = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
-            {
-                Inverse = false,
-                ImageHeight = 16,
-                ImageWidth = 16,
-                GreyScale = true,
-            });
+            //// IMAGE ENCODER
+            //ImageEncoder imgEncoder = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
+            //{
+            //    Inverse = false,
+            //    ImageHeight = 16,
+            //    ImageWidth = 16,
+            //    GreyScale = true,
+            //});
+
+            //ImageEncoder imgEncoder2 = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
+            //{
+            //    Inverse = false,
+            //    ImageHeight = 16,
+            //    ImageWidth = 16,
+            //    GreyScale = true,
+            //});
 
             #endregion
 
             #region Run experiment
-            var mem = new Connections(cfg);
+            //var mem = new Connections(cfg);
 
-            bool isInStableState = false;
+            //bool isInStableState = false;
 
             HtmClassifier<string, ComputeCycle> cls = new HtmClassifier<string, ComputeCycle>();
 
             var numUniqueInputs = trainingSamples.Count;
 
-            CortexLayer<object, object> layer1 = new CortexLayer<object, object>("L1");
+            //CortexLayer<object, object> layer1 = new CortexLayer<object, object>("L1");
+            //CortexLayer<object, object> layer2 = new CortexLayer<object, object>("L2");
 
             // For more information see following paper: https://www.scitepress.org/Papers/2021/103142/103142.pdf
-            HomeostaticPlasticityController hpc = new HomeostaticPlasticityController(mem, numUniqueInputs * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
-            {
-                if (isStable)
-                    // Event should be fired when entering the stable state.
-                    Debug.WriteLine($"STABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
-                else
-                    // Ideal SP should never enter unstable state after stable state.
-                    Debug.WriteLine($"INSTABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
+            //HomeostaticPlasticityController hpc = new HomeostaticPlasticityController(mem, numUniqueInputs * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
+            //{
+            //    if (isStable)
+            //        // Event should be fired when entering the stable state.
+            //        Debug.WriteLine($"STABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
+            //    else
+            //        // Ideal SP should never enter unstable state after stable state.
+            //        Debug.WriteLine($"INSTABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
 
-                // We are not learning in instable state.
-                isInStableState = isStable;
+            //    // We are not learning in instable state.
+            //    isInStableState = isStable;
 
-                // Clear active and predictive cells.
-                //tm.Reset(mem);
-            }, numOfCyclesToWaitOnChange: 50);
+            //    // Clear active and predictive cells.
+            //    //tm.Reset(mem);
+            //}, numOfCyclesToWaitOnChange: 50);
 
+            LearningUnit learningUnit1 = new LearningUnit(16, 16, numColumns, "placeholder");
+            LearningUnit learningUnit2 = new LearningUnit(16, 16, numColumns, "placeholder");
+            learningUnit1.TrainAndLearn(sourceSet_32x32);
+            learningUnit2.TrainAndLearn(sourceSet);
+            //SpatialPooler sp1 = new SpatialPooler(hpc);
+            //SpatialPooler sp2 = new SpatialPooler(hpc);
+            //sp1.Init(mem);
+            //sp2.Init(mem);
+            ////tm.Init(mem);
 
-            SpatialPooler sp = new SpatialPooler(hpc);
-            sp.Init(mem);
-            //tm.Init(mem);
+            //layer1.HtmModules.Add("encoder1", imgEncoder);
+            //layer1.HtmModules.Add("sp1", sp1);
 
-            layer1.HtmModules.Add("encoder", imgEncoder);
-            layer1.HtmModules.Add("sp", sp);
+            //layer2.HtmModules.Add("encoder2", imgEncoder2);
+            //layer2.HtmModules.Add("sp2", sp2);
 
-            //double[] inputs = inputValues.ToArray();
-            int[] prevActiveCols = new int[0];
+            ////double[] inputs = inputValues.ToArray();
+            //int[] prevActiveCols = new int[0];
 
-            int cycle = 0;
+            //int cycle = 0;
 
-            var lastPredictedValues = new List<string>(new string[] { "0" });
+            //var lastPredictedValues = new List<string>(new string[] { "0" });
 
-            int maxCycles = 1000;
+            //int maxCycles = 1000;
 
-            //
-            // Training SP to get stable. New-born stage.
-            Stopwatch sw = Stopwatch.StartNew();
-            sw.Start();
-            for (int i = 0; i < maxCycles /*&& isInStableState == false*/; i++)
-            {
-                Debug.WriteLine($"-------------- Newborn Cycle {cycle} ---------------");
+            ////
+            //// Training SP to get stable. New-born stage.
+            //Stopwatch sw = Stopwatch.StartNew();
+            //sw.Start();
+            //for (int i = 0; i < maxCycles /*&& isInStableState == false*/; i++)
+            //{
+            //    Debug.WriteLine($"-------------- Newborn Cycle {cycle} ---------------");
 
-                foreach (var trainingSample in trainingSamples)
-                {
-                    var lyrOut1 = layer1.Compute(trainingSample.FramePath, true);
-                    //var activeColumns = layer1.GetResult("sp") as int[];
-                }
-                if (isInStableState)
-                {
-                    sw.Stop();
-                    var elapsedTime = sw.Elapsed;            
-                    break;
-                }
-                cycle++;
-            }
+            //    foreach (var trainingSample in trainingSamples)
+            //    {
+            //        var lyrOut1 = layer1.Compute(trainingSample.FramePath, true);
+            //        //var activeColumns = layer1.GetResult("sp") as int[];
+            //    }
+            //    foreach (var mnistSample in mnistSamples)
+            //    {
+            //        var lyrOut2 = layer2.Compute(mnistSample.FramePath, true);
+            //    }
+            //    if (isInStableState)
+            //    {
+            //        sw.Stop();
+            //        var elapsedTime = sw.Elapsed;            
+            //        break;
+            //    }
+            //    cycle++;
+            //}
 
             //
             // Add the stable SDRs to samples.
             foreach (var trainingSample in trainingSamples)
             {
-                var lyrOut1 = layer1.Compute(trainingSample.FramePath, false);
-                var activeColumns = layer1.GetResult("sp") as int[];
+                //var lyrOut1 = layer1.Compute(trainingSample.FramePath, false);
+                //var activeColumns = layer1.GetResult("sp1") as int[];
 
+                var activeColumns = learningUnit1.Predict(trainingSample.FramePath);
                 if (activeColumns != null)
                 {
                     trainingSample.PixelIndicies = new int[activeColumns.Length];
@@ -307,9 +349,10 @@ namespace InvariantLearning_FrameCheck
                 // Create and add SDRs for the testing samples.
                 foreach (var testingSample in testingSamples)
                 {
-                    var lyrOut1 = layer1.Compute(testingSample.FramePath, false);
-                    var activeColumns = layer1.GetResult("sp") as int[];
+                    //var lyrOut1 = layer1.Compute(testingSample.FramePath, false);
+                    //var activeColumns = layer1.GetResult("sp1") as int[];
 
+                    var activeColumns = learningUnit1.Predict(testingSample.FramePath);
                     if (activeColumns != null)
                     {
                         testingSample.PixelIndicies = new int[activeColumns.Length];
@@ -322,7 +365,24 @@ namespace InvariantLearning_FrameCheck
                 var testingSamplesDict = testingSamples.Select(x => x).GroupBy(x => x.Object).ToDictionary(group => group.Key, group => group.ToList());
                 foreach (var item in testingSamplesDict)
                 {
-                    var predictedObj = cls.PredictObj(item.Value, 5);
+                    var predictedImagesPath = Path.Combine(experimentFolder, "predictedImages");
+                    Utility.CreateFolderIfNotExist(predictedImagesPath);
+                    //var predictedObj = cls.PredictObj(item.Value, 5);
+                    var predictedObj2 = cls.PredictObj2(item.Value, 5);
+                    Utility.CreateFolderIfNotExist(Path.Combine(predictedImagesPath, $"{item.Key}"));
+                    foreach (var obj in predictedObj2)
+                    {
+                        var frame = obj.Position;
+                        var testImages = scaledTestSet.Images.Where(x => x.Label == item.Key);
+                        foreach (var testImage in testImages)
+                        {
+                            if (testImage.IsRegionInDensityRange(frame, 30, 80))
+                            {
+                                string savePath = Path.Combine(predictedImagesPath, $"{item.Key}", $"{obj.Object}_{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
+                            testImage.SaveTo(savePath, frame, true);
+                            }
+                        }
+                    }
                 }
                 testingSamples.Clear();
                 testingSamplesDict.Clear();

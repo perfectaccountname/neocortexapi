@@ -338,6 +338,17 @@ namespace NeoCortexApi.Classifiers
             return m_WinnerSamples;
         }
 
+        public List<Sample> PredictObj2(List<Sample> testingSamples, int howManyFeatures)
+        {
+            m_SelectedSamples.Clear();
+            foreach (var testingSample in testingSamples)
+            {
+                var matchingFeatureList = GetMatchingFeatures(m_AllSamples.Select(i => i.PixelIndicies), testingSample.PixelIndicies, howManyFeatures);
+                AddSelectedSamples(testingSample, matchingFeatureList);
+            }
+            return m_SelectedSamples;
+        }
+
         //public void PredictObj(List<Sample> testingSamples, int howManyFeatures)
         //{
         //    var inputDict = testingSamples.Select(x => x).GroupBy(x => x.Object).ToDictionary(group => group.Key, group => group.ToList());
@@ -390,7 +401,7 @@ namespace NeoCortexApi.Classifiers
                 {
                     if (trainingSample.PixelIndicies.SequenceEqual(feature))
                     {
-                        Sample sample = new Sample() { FramePath = "" };
+                        Sample sample = new Sample() { FramePath = trainingSample.FramePath };
                         sample.Object = trainingSample.Object;
                         sample.PixelIndicies = trainingSample.PixelIndicies;
                         sample.Position = new Frame(
@@ -399,7 +410,11 @@ namespace NeoCortexApi.Classifiers
                             testingSample.Position.brX + trainingSample.Position.brX,
                             testingSample.Position.brY + trainingSample.Position.brY
                         );
-                        m_SelectedSamples.Add(sample);
+                        bool goodPosition = (sample.Position.tlX >= 0 && sample.Position.tlX < 100 && sample.Position.tlY >= 0 && sample.Position.tlY < 100 && sample.Position.brX >= 0 && sample.Position.brX < 100 && sample.Position.brY >= 0 && sample.Position.brY < 100);
+                        if (goodPosition)
+                        {
+                            m_SelectedSamples.Add(sample);
+                        }
 
                         //if (m_SelectedSamples.Count() > 0)
                         //{
@@ -427,7 +442,7 @@ namespace NeoCortexApi.Classifiers
                     }
                 }
             }
-            m_SelectedSamples = m_SelectedSamples.GroupBy(x => x.PixelIndicies).Select(y => y.First()).ToList();
+            //m_SelectedSamples = m_SelectedSamples.GroupBy(x => x.PixelIndicies).Select(y => y.First()).ToList();
         }
 
         /// <summary>
@@ -452,10 +467,10 @@ namespace NeoCortexApi.Classifiers
 
             //
             //Remove redundant entries.
-            //if (results.Count > maxFeatures)
-            //{
-            //    results.RemoveRange(0, results.Count - maxFeatures);
-            //}
+            if (results.Count > maxFeatures)
+            {
+                results.RemoveRange(0, results.Count - maxFeatures);
+            }
 
             return results;
         }

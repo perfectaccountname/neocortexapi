@@ -291,7 +291,7 @@ namespace InvariantLearning_FrameCheck
             {
                 return new int[columnDim];
             }
-
+            return activeColumns;
             return ToSDRBinArray(activeColumns);
         }
 
