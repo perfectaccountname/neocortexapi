@@ -105,7 +105,7 @@ namespace InvariantLearning_FrameCheck
 
             // Training In New Born State
             int cycle = 0;
-            int maxCycle = 500;
+            int maxCycle = 600;
             while (cycle < maxCycle)
             {
                 Debug.Write($"Cycle {cycle}: ");
@@ -177,7 +177,7 @@ namespace InvariantLearning_FrameCheck
             // classifier.Learn($"{sample.label}_{Path.GetFileName(sample.imagePath)}", activeColumns);
 
             // Uncomment this to learn only the label
-            classifier.Learn(sample.Label, activeColumns);
+            //classifier.Learn(sample.Label, activeColumns);
         }
 
         /// <summary>
@@ -292,10 +292,10 @@ namespace InvariantLearning_FrameCheck
                 return new int[columnDim];
             }
             return activeColumns;
-            return ToSDRBinArray(activeColumns);
+            //return ToSDRBinArray(activeColumns);
         }
 
-        private int[] ToSDRBinArray(int[] activeColumns)
+        public int[] ToSDRBinArray(int[] activeColumns)
         {
             int[] res = new int[columnDim];
 

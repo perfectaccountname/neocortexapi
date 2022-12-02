@@ -55,6 +55,8 @@ namespace NeoCortexApi.Classifiers
         private List<Sample> m_AllSamples = new List<Sample>();
         private List<Sample> m_WinnerSamples = new List<Sample>();
 
+        private List<Sample> m_AllMnistSamples = new List<Sample>();
+
         /// <summary>
         /// Recording of all SDRs. See maxRecordedElements.
         /// </summary>
@@ -257,6 +259,14 @@ namespace NeoCortexApi.Classifiers
             m_AllSamples.AddRange(trainingSamples);
         }
 
+        /// <summary>
+        /// Remember the mnist samples.
+        /// </summary>
+        public void LearnMnistObj(List<Sample> mnistSamples)
+        {
+            m_AllMnistSamples.AddRange(mnistSamples);
+        }
+
         public List<Sample> PredictObj(List<Sample> testingSamples, int howManyFeatures)
         {
             foreach (var testingSample in testingSamples)
@@ -347,6 +357,61 @@ namespace NeoCortexApi.Classifiers
                 AddSelectedSamples(testingSample, matchingFeatureList);
             }
             return m_SelectedSamples;
+        }
+
+        public List<string> ValidateObj(int[] objIndicies, int howManyObjs)
+        {
+            string winner = String.Empty;
+            List<string> winnerList = new List<string>();
+            Dictionary<string, double> distanceDict = new Dictionary<string, double>();
+            int maxSameBits = 0;
+            double maxHamDist = 0;
+            double maxSimilarity = 10.0;
+            foreach (var sample in m_AllMnistSamples)
+            {
+                var similarity = MathHelpers.CalcArraySimilarity(objIndicies, sample.PixelIndicies);
+                if (similarity > maxSimilarity)
+                {
+                    maxSimilarity = similarity;
+                    winner = sample.Object;
+                    winnerList.Add(winner);
+                }
+
+                //var distance = MathHelpers.GetHammingDistance(sample.PixelIndicies, objIndicies, false);
+                //var count = 0;
+                //if (maxHamDist < distance && distance > 90)
+                //{
+                //    maxHamDist = distance;
+                //    winner = sample.Object;
+                //    winnerList.Add(winner);
+                //    count++;
+                //}
+
+                //var numOfSameBitsPct = sample.PixelIndicies.Intersect(objIndicies).Count();
+                //if (numOfSameBitsPct > maxSameBits)
+                //{
+                //    maxSameBits = numOfSameBitsPct;
+                //    winner = sample.Object;
+                //    winnerList.Add(winner);
+                //}
+
+                //int numOfBits = objIndicies.Count();
+                //double similarity = ((double)numOfSameBitsPct / (double)numOfBits) * 100;
+
+                //if (similarity >= 70)
+                //{
+                //    return winner = sample.Object;
+                //}
+            }
+            if (winnerList.Count > howManyObjs)
+            {
+                winnerList.RemoveRange(0, winnerList.Count - howManyObjs);
+            }
+            //var result = winnerList.GroupBy(x => x)
+            //      .OrderByDescending(g => g.Count())
+            //      .Select(g => g.Key)
+            //      .First();
+            return winnerList;
         }
 
         //public void PredictObj(List<Sample> testingSamples, int howManyFeatures)
@@ -450,19 +515,26 @@ namespace NeoCortexApi.Classifiers
         /// </summary>
         public List<int[]> GetMatchingFeatures(IEnumerable<int[]> trainingSamplesIndicies, int[] testingSamplesIndicies, int maxFeatures)
         {
+            double maxSimilarity = 10.0;
             int maxSameBits = 0;
             List<int[]> results = new List<int[]>();
             foreach (var trainingIndicies in trainingSamplesIndicies)
             {
-                var numOfSameBitsPct = testingSamplesIndicies.Intersect(trainingIndicies).Count();
-                int numOfBits = trainingIndicies.Count();
-                double similarity = ((double) numOfSameBitsPct/ (double) numOfBits)*100;
-                
-                if (numOfSameBitsPct >= maxSameBits /*similarity >= 50*/)
+                var similarity = MathHelpers.CalcArraySimilarity(testingSamplesIndicies, trainingIndicies);
+                if (similarity > maxSimilarity)
                 {
-                    maxSameBits = numOfSameBitsPct;
+                    maxSimilarity = similarity;
                     results.Add(trainingIndicies);
                 }
+                //var numOfSameBitsPct = testingSamplesIndicies.Intersect(trainingIndicies).Count();
+                //int numOfBits = trainingIndicies.Count();
+                //double similarity = ((double) numOfSameBitsPct/ (double) numOfBits)*100;
+                
+                //if (numOfSameBitsPct >= maxSameBits /*similarity >= 50*/)
+                //{
+                //    maxSameBits = numOfSameBitsPct;
+                //    results.Add(trainingIndicies);
+                //}
             }
 
             //

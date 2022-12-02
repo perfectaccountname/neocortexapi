@@ -33,15 +33,16 @@ namespace InvariantLearning_FrameCheck
         {
             #region Samples taking
             List<Sample> trainingSamples = new List<Sample>();
+            List<Sample> trainingBigSamples = new List<Sample>();
             List<Sample> testingSamples = new List<Sample>();
-            List<Sample> mnistSamples = new List<Sample>();
+            List<Sample> sourceSamples = new List<Sample>();
 
             Utility.CreateFolderIfNotExist(experimentFolder);
 
             // Get the folder of MNIST archives tar.gz files.
             string sourceMNIST = Path.Combine(experimentFolder, "MnistSource");
             Utility.CreateFolderIfNotExist(sourceMNIST);
-            Mnist.DataGen("MnistDataset", sourceMNIST, 10);
+            Mnist.DataGen("MnistDataset", sourceMNIST, 15);
 
             // generate 32x32 source MNISTDataSet
             int imageWidth = 32; int imageHeight = 32;
@@ -49,17 +50,21 @@ namespace InvariantLearning_FrameCheck
             DataSet sourceSet = new DataSet(sourceMNIST);
 
             DataSet sourceSet_32x32 = DataSet.ScaleSet(experimentFolder, imageWidth, imageHeight, sourceSet, "sourceSet");
-            DataSet testSet_32x32 = sourceSet_32x32.GetTestData(20);
+            DataSet testSet_32x32 = sourceSet_32x32.GetTestData(10);
 
-            DataSet scaledTestSet = DataSet.CreateTestSet(testSet_32x32, 100, 100, Path.Combine(experimentFolder, "testSet_32x32"));
+            DataSet scaledTestSet = DataSet.CreateTestSet(testSet_32x32, 100, 100, Path.Combine(experimentFolder, "testSet_100x100"));
+            DataSet scaledTrainSet = DataSet.CreateTestSet(sourceSet_32x32, 100, 100, Path.Combine(experimentFolder, "trainSet_100x100"));
 
             // write extracted/filtered frame from 32x32 dataset into 4x4 for SP to learn all pattern
             //var listOfFrame = Frame.GetConvFrames(imageWidth, imageHeight, frameWidth, frameHeight, 4, 4);
             var listOfFrame = Frame.GetConvFramesbyPixel(32, 32, frameWidth, frameHeight, 4);
             string extractedFrameFolder = Path.Combine(experimentFolder, "extractedFrameTraining");
+            string extractedBigFrameFolder = Path.Combine(experimentFolder, "extractedBigFrameTraining");
             string extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
             int index = 0;
             List<string> frameDensityList = new List<string>();
+
+            string extractedFrameFolderTest = Path.Combine(experimentFolder, "extractedFrameTesting");
 
             //
             // Creating the training frames for each images and put them in folders.
@@ -69,7 +74,7 @@ namespace InvariantLearning_FrameCheck
                 //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{image.Label}"));
                 foreach (var frame in listOfFrame)
                 {
-                    if (image.IsRegionInDensityRange(frame, 30, 80))
+                    if (image.IsRegionInDensityRange(frame, 25, 80))
                     {
                         //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolder, $"{index}" ));
                         if (!DataSet.ExistImageInDataSet(image, extractedFrameFolder, frame))
@@ -112,8 +117,8 @@ namespace InvariantLearning_FrameCheck
                     // Calculate offset coordinates.
                     var tlX = coorOffsetList[0] = 0 - coorOffsetList[0];
                     var tlY = coorOffsetList[1] = 0 - coorOffsetList[1];
-                    var brX = coorOffsetList[2] = imageWidth - coorOffsetList[2];
-                    var brY = coorOffsetList[3] = imageHeight - coorOffsetList[3];
+                    var brX = coorOffsetList[2] = imageWidth - coorOffsetList[2] - 1;
+                    var brY = coorOffsetList[3] = imageHeight - coorOffsetList[3] - 1;
 
                     Sample sample = new Sample();
                     sample.Object = label;
@@ -125,21 +130,19 @@ namespace InvariantLearning_FrameCheck
 
             //
             // Creating the testing frames for each images and put them in folders.
-            string extractedFrameFolderTest = Path.Combine(experimentFolder, "extractedFrameTesting");
             Utility.CreateFolderIfNotExist(extractedFrameFolderTest);
             //listOfFrame = Frame.GetConvFrames(80, 80, frameWidth, frameHeight, 10, 10);
-            listOfFrame = Frame.GetConvFramesbyPixel(96, 96, frameWidth, frameHeight, 4);
+            listOfFrame = Frame.GetConvFramesbyPixel(100, 100, frameWidth, frameHeight, 4);
             index = 0;
             foreach (var testImage in scaledTestSet.Images)
             {
                 Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderTest, $"{testImage.ImagePath.Substring(testImage.ImagePath.Length - 5, 1)}", $"{testImage.Label}"));
                 foreach (var frame in listOfFrame)
                 {
-                    if (testImage.IsRegionInDensityRange(frame, 30, 80))
+                    if (testImage.IsRegionInDensityRange(frame, 25, 80))
                     {
                         if (!DataSet.ExistImageInDataSet(testImage, extractedFrameFolderTest, frame))
                         {
-
                             string savePath = Path.Combine(extractedFrameFolderTest, $"{testImage.ImagePath.Substring(testImage.ImagePath.Length - 5, 1)}", $"{testImage.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
 
                             testImage.SaveTo(savePath, frame, true);
@@ -152,24 +155,116 @@ namespace InvariantLearning_FrameCheck
                 index = 0;
             }
 
-            string[] digits = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-            foreach (var digit in digits)
+            //
+            // Creating the big training frames for each images and put them in folders.
+            //listOfFrame = Frame.GetConvFrames(80, 80, frameWidth, frameHeight, 10, 10);
+            var listOfBigFrame = Frame.GetConvFramesbyPixel(100, 100, imageWidth, imageHeight, 1);
+            index = 0;
+            foreach (var image in scaledTrainSet.Images)
             {
-                //
-                // training images.
-                string digitTrainingFolder = Path.Combine(experimentFolder, "sourceSet_32x32", digit);
-                var trainingImages = Directory.GetFiles(digitTrainingFolder);
-
-                foreach (string image in trainingImages)
+                Utility.CreateFolderIfNotExist(Path.Combine(extractedBigFrameFolder, $"{image.Label}"));
+                //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{image.Label}"));
+                double minDensity = 45;
+                string savePath = "";
+            restart:
+                foreach (var frame in listOfBigFrame)
                 {
-                    Sample sample = new Sample();
-                    var imageName = Path.GetFileName(image);
-                    sample.FramePath = Path.Combine(digitTrainingFolder, imageName);
-                    sample.Object = imageName;
+                    if (image.IsRegionInDensityRange(frame, minDensity, 80))
+                    {
+                        //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolder, $"{index}" ));
+                        if (!DataSet.ExistImageInDataSet(image, extractedBigFrameFolder, frame))
+                        {
+                            //string savePath = Path.Combine(extractedFrameFolder, $"{index}", $"{index}.png");
+                            //extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
+                            //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{index}"));
+                            //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{index}", $"{index}_ori.png");
 
-                    mnistSamples.Add(sample);
+                            savePath = Path.Combine(extractedBigFrameFolder, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
+                            //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
+
+                            image.SaveTo(savePath, frame, true);
+                            //image.SaveTo(savePathOri, frame);
+
+                            frameDensityList.Add($"pattern {index}, Pixel Density {image.FrameDensity(frame, 255 / 2) * 100}");
+                            index += 1;
+                        }
+                    }
+                    if ((frame == listOfBigFrame.Last()) && string.IsNullOrEmpty(savePath))
+                    {
+                        minDensity -= 1;
+                        if (minDensity < 10)
+                        {
+                            break;
+                        }
+                        goto restart;
+                    }
+                }
+                index = 0;
+            }
+            //listOfBigFrame = Frame.GetConvFramesbyPixel(32, 32, 32, 32, 4);
+            //foreach (var image in sourceSet_32x32.Images)
+            //{
+            //    foreach (var frame in listOfBigFrame)
+            //    {
+            //        var savePath = Path.Combine(extractedBigFrameFolder, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}_{sourceSet_32x32.Images.IndexOf(image)}.png");
+            //        image.SaveTo(savePath, frame, true);
+            //    }
+            //}
+
+            //
+            // Create big training samples from the extracted frames.
+            foreach (var classFolder in Directory.GetDirectories(extractedBigFrameFolder))
+            {
+                string label = Path.GetFileName(classFolder);
+                foreach (var imagePath in Directory.GetFiles(classFolder))
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(imagePath);
+                    var coordinatesString = fileName.Split('_').ToList();
+                    List<int> coorOffsetList = new List<int>();
+                    foreach (var coordinates in coordinatesString)
+                    {
+                        coorOffsetList.Add(int.Parse(coordinates));
+                    }
+
+                    //
+                    // Calculate offset coordinates.
+                    var tlX = coorOffsetList[0];
+                    var tlY = coorOffsetList[1];
+                    var brX = coorOffsetList[2];
+                    var brY = coorOffsetList[3];
+
+                    Sample sample = new Sample();
+                    sample.Object = label;
+                    sample.FramePath = imagePath;
+                    sample.Position = new Frame(tlX, tlY, brX, brY);
+                    trainingBigSamples.Add(sample);
                 }
             }
+
+
+            DataSet trainingSet = new DataSet(extractedFrameFolder);
+            DataSet trainingBigSet = new DataSet(extractedBigFrameFolder);
+
+            //a
+            // Create the big testing frame
+            //string[] digits = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+            //foreach (var digit in digits)
+            //{
+            //    //
+            //    // training images.
+            //    string digitTrainingFolder = Path.Combine(experimentFolder, "sourceSet_32x32", digit);
+            //    var trainingImages = Directory.GetFiles(digitTrainingFolder);
+
+            //    foreach (string image in trainingImages)
+            //    {
+            //        Sample sample = new Sample();
+            //        var imageName = Path.GetFileName(image);
+            //        sample.FramePath = Path.Combine(digitTrainingFolder, imageName);
+            //        sample.Object = digit;
+
+            //        sourceSamples.Add(sample);
+            //    }
+            //}
 
             #endregion
 
@@ -255,9 +350,9 @@ namespace InvariantLearning_FrameCheck
             //}, numOfCyclesToWaitOnChange: 50);
 
             LearningUnit learningUnit1 = new LearningUnit(16, 16, numColumns, "placeholder");
-            LearningUnit learningUnit2 = new LearningUnit(16, 16, numColumns, "placeholder");
-            learningUnit1.TrainAndLearn(sourceSet_32x32);
-            learningUnit2.TrainAndLearn(sourceSet);
+            LearningUnit learningUnit2 = new LearningUnit(32, 32, numColumns*4, "placeholder");
+            learningUnit1.TrainingNewbornCycle(trainingSet);
+            learningUnit2.TrainingNewbornCycle(trainingBigSet);
             //SpatialPooler sp1 = new SpatialPooler(hpc);
             //SpatialPooler sp2 = new SpatialPooler(hpc);
             //sp1.Init(mem);
@@ -307,25 +402,45 @@ namespace InvariantLearning_FrameCheck
 
             //
             // Add the stable SDRs to samples.
+            List<Sample> samples = new List<Sample>();
             foreach (var trainingSample in trainingSamples)
             {
                 //var lyrOut1 = layer1.Compute(trainingSample.FramePath, false);
                 //var activeColumns = layer1.GetResult("sp1") as int[];
 
                 var activeColumns = learningUnit1.Predict(trainingSample.FramePath);
-                if (activeColumns != null)
+                if (activeColumns != null && activeColumns.Length != 0)
                 {
                     trainingSample.PixelIndicies = new int[activeColumns.Length];
                     trainingSample.PixelIndicies = activeColumns;
+                    samples.Add(trainingSample);
                 }
             }
-            cls.LearnObj(trainingSamples);
+            cls.LearnObj(samples);
+
+            List<Sample> bigSamples = new List<Sample>();
+            foreach (var bigSample in trainingBigSamples)
+            {
+                var activeColumns = learningUnit2.Predict(bigSample.FramePath);
+                var sdrBinArray = learningUnit2.ToSDRBinArray(activeColumns);
+                if (activeColumns != null && activeColumns.Length != 0)
+                {
+                    bigSample.PixelIndicies = new int[activeColumns.Length];
+                    bigSample.PixelIndicies = activeColumns;
+                    bigSamples.Add(bigSample);
+                }
+            }
+            cls.LearnMnistObj(bigSamples);
 
             //
             // Create testing samples from the extracted frames.
             string[] directories = System.IO.Directory.GetDirectories(extractedFrameFolderTest, "*", System.IO.SearchOption.TopDirectoryOnly);
+            var directoryCount = 0;
             foreach (string directory in directories)
             {
+                var directoryPath = Path.Combine(experimentFolder, $"predictedFrames_{directoryCount}");
+                directoryCount++;
+                Utility.CreateFolderIfNotExist(directoryPath);
                 foreach (var classFolder in Directory.GetDirectories(directory))
                 {
                     string label = Path.GetFileName(classFolder);
@@ -363,27 +478,109 @@ namespace InvariantLearning_FrameCheck
                 //
                 // Classifying each testing sample.
                 var testingSamplesDict = testingSamples.Select(x => x).GroupBy(x => x.Object).ToDictionary(group => group.Key, group => group.ToList());
+                double match = 0;
                 foreach (var item in testingSamplesDict)
                 {
-                    var predictedImagesPath = Path.Combine(experimentFolder, "predictedImages");
-                    Utility.CreateFolderIfNotExist(predictedImagesPath);
                     //var predictedObj = cls.PredictObj(item.Value, 5);
-                    var predictedObj2 = cls.PredictObj2(item.Value, 5);
-                    Utility.CreateFolderIfNotExist(Path.Combine(predictedImagesPath, $"{item.Key}"));
-                    foreach (var obj in predictedObj2)
+                    var predictedObj = cls.PredictObj2(item.Value, 10);
+                    var itemFolderPath = Path.Combine(directoryPath, $"{item.Key}");
+                    Utility.CreateFolderIfNotExist(itemFolderPath);
+                    double bestPixelDensity = 0.0;
+                    var testImages = scaledTestSet.Images.Where(x => x.Label == item.Key).ToList();
+                    foreach (var testImage in testImages)
                     {
-                        var frame = obj.Position;
-                        var testImages = scaledTestSet.Images.Where(x => x.Label == item.Key);
-                        foreach (var testImage in testImages)
+                        Dictionary<Frame, double> frameDensityDict = new Dictionary<Frame, double>();
+                        double minDensity = 10.0;
+                        foreach (var obj in predictedObj)
                         {
-                            if (testImage.IsRegionInDensityRange(frame, 30, 80))
-                            {
-                                string savePath = Path.Combine(predictedImagesPath, $"{item.Key}", $"{obj.Object}_{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
-                            testImage.SaveTo(savePath, frame, true);
-                            }
+                            var frame = obj.Position;
+                            double whitePixelDensity = testImage.FrameDensity(frame, minDensity);
+                            frameDensityDict.Add(frame, whitePixelDensity);
                         }
+                        Frame chosenFrame = frameDensityDict.OrderByDescending(g => g.Value).Select(g => g.Key).First();
+                        var savePath = Path.Combine(itemFolderPath, $"{testImage.Label}.png");
+                        testImage.SaveTo(savePath, chosenFrame, true);
+                    }
+
+                    //foreach (var obj in predictedObj)
+                    //{
+                    //    var frame = obj.Position;
+                    //    var testImages = scaledTestSet.Images.Where(x => x.Label == item.Key).ToList();
+                    //    double minDensity = 50.0;
+                    //    Image chosenImage = testImages.FirstOrDefault();
+                    //    string savePath = "";
+                    //    restart:
+                    //    foreach (var testImage in testImages)
+                    //    {
+                    //        double whitePixelDensity = testImage.FrameDensity(frame, minDensity);
+                    //        if (whitePixelDensity >= bestPixelDensity && whitePixelDensity >= minDensity)
+                    //        {
+                    //            bestPixelDensity = whitePixelDensity;
+                    //            chosenImage = testImage;
+                    //            savePath = Path.Combine(itemFolderPath, $"{obj.Object}_{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
+                    //        }
+                    //        if ((testImage == testImages.Last()) && (string.IsNullOrEmpty(savePath)))
+                    //        {
+                    //            minDensity -= 2;
+                    //            if (minDensity < 10)
+                    //            {
+                    //                break;
+                    //            }
+                    //            goto restart;
+                    //        }
+
+                    //        //if (testImage.IsRegionInDensityRange(frame, minDensity, 80))
+                    //        //{
+                    //        //    chosenImage = testImage;
+                    //        //    //string toBeSearched = $"\\{item.Key}\\";
+                    //        //    //string extension = ".png";
+                    //        //    savePath = Path.Combine(itemFolderPath/*, testImage.ImagePath.Substring(testImage.ImagePath.IndexOf(toBeSearched) + toBeSearched.Length, testImage.ImagePath.Length - (testImage.ImagePath.IndexOf(extension) + extension.Length - 1))*/, $"{obj.Object}_{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
+                    //        //}
+                    //        //if ((testImage == testImages.Last()) && (string.IsNullOrEmpty(savePath)))
+                    //        //{
+                    //        //    minDensity -= 2;
+                    //        //    if (minDensity < 10)
+                    //        //    {
+                    //        //        break;
+                    //        //    }
+                    //        //    goto restart;
+                    //        //}
+                    //        //if(!string.IsNullOrEmpty(savePath))
+                    //        //{
+                    //        //    testImage.SaveTo(savePath, frame, true);
+                    //        //}
+                    //    }
+                        //if (!string.IsNullOrEmpty(savePath))
+
+                        //{
+                        //    chosenImage.SaveTo(savePath, frame, true);
+                        //}
+                    //}
+                    
+                    var savePathList = Directory.GetFiles(itemFolderPath).ToList();
+                    List<string> results = new List<string>();
+                    foreach (var path in savePathList)
+                    {
+                        var activeColumns = learningUnit2.Predict(path);
+
+                        var sdrBinArray = learningUnit2.ToSDRBinArray(activeColumns);
+                        var res = cls.ValidateObj(activeColumns, 2);
+                        results.AddRange(res);
+                    }
+                    var resultOrder = results.GroupBy(x => x)
+                                            .OrderByDescending(g => g.Count())
+                                            .Select(g => g.Key).ToList();
+                    var bestResult = resultOrder.First();
+                    if (bestResult == item.Key)
+                    {
+                        match++;
                     }
                 }
+
+                //
+                // Calculate Accuracy
+                double numOfItems = testingSamplesDict.Count();
+                var accuracy = (match / numOfItems)*100;
                 testingSamples.Clear();
                 testingSamplesDict.Clear();
             }
