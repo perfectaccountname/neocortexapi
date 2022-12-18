@@ -16,13 +16,8 @@ namespace InvariantLearning_FrameCheck
         public static void Main()
         {
             string experimentTime = DateTime.UtcNow.ToLongDateString().ToString().Replace(',', ' ') + " " + DateTime.UtcNow.ToLongTimeString().ToString().Replace(':', '_');
-            //ExperimentPredictingWithFrameGrid();
-            //ExperimentNormalImageClassification();
-            //LocaDimensionTest();
-            //ExperimentEvaluatateImageClassification($"EvaluateImageClassification {experimentTime}");
             // Invariant Learning Experiment
             InvariantRepresentation($"HtmInvariantLearning {experimentTime}");
-            //SPCapacityTest();
         }
 
         /// <summary>
@@ -76,19 +71,11 @@ namespace InvariantLearning_FrameCheck
                 {
                     if (image.IsRegionInDensityRange(frame, 25, 80))
                     {
-                        //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolder, $"{index}" ));
                         if (!DataSet.ExistImageInDataSet(image, extractedFrameFolder, frame))
                         {
-                            //string savePath = Path.Combine(extractedFrameFolder, $"{index}", $"{index}.png");
-                            //extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
-                            //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{index}"));
-                            //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{index}", $"{index}_ori.png");
-
                             string savePath = Path.Combine(extractedFrameFolder, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
-                            //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
 
                             image.SaveTo(savePath, frame, true);
-                            //image.SaveTo(savePathOri, frame);
 
                             frameDensityList.Add($"pattern {index}, Pixel Density {image.FrameDensity(frame, 255 / 2) * 100}");
                             index += 1;
@@ -163,7 +150,6 @@ namespace InvariantLearning_FrameCheck
             foreach (var image in scaledTrainSet.Images)
             {
                 Utility.CreateFolderIfNotExist(Path.Combine(extractedBigFrameFolder, $"{image.Label}"));
-                //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{image.Label}"));
                 double minDensity = 45;
                 string savePath = "";
             restart:
@@ -171,19 +157,12 @@ namespace InvariantLearning_FrameCheck
                 {
                     if (image.IsRegionInDensityRange(frame, minDensity, 80))
                     {
-                        //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolder, $"{index}" ));
                         if (!DataSet.ExistImageInDataSet(image, extractedBigFrameFolder, frame))
                         {
-                            //string savePath = Path.Combine(extractedFrameFolder, $"{index}", $"{index}.png");
-                            //extractedFrameFolderBinarized = Path.Combine(experimentFolder, "extractedFrameBinarized");
-                            //Utility.CreateFolderIfNotExist(Path.Combine(extractedFrameFolderBinarized, $"{index}"));
-                            //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{index}", $"{index}_ori.png");
 
                             savePath = Path.Combine(extractedBigFrameFolder, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
-                            //string savePathOri = Path.Combine(extractedFrameFolderBinarized, $"{image.Label}", $"{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
 
                             image.SaveTo(savePath, frame, true);
-                            //image.SaveTo(savePathOri, frame);
 
                             frameDensityList.Add($"pattern {index}, Pixel Density {image.FrameDensity(frame, 255 / 2) * 100}");
                             index += 1;
@@ -274,131 +253,17 @@ namespace InvariantLearning_FrameCheck
             int inputBits = 256;
             int numColumns = 1024;
 
-            //HtmConfig cfg = new HtmConfig(new int[] { inputBits }, new int[] { numColumns })
-            //{
-            //    Random = new ThreadSafeRandom(42),
-
-            //    CellsPerColumn = 25,
-            //    GlobalInhibition = true,
-            //    LocalAreaDensity = -1,
-            //    NumActiveColumnsPerInhArea = 0.02 * numColumns,
-            //    PotentialRadius = (int)(0.15 * inputBits),
-            //    //InhibitionRadius = 15,
-
-            //    MaxBoost = 10.0,
-            //    DutyCyclePeriod = 25,
-            //    MinPctOverlapDutyCycles = 0.75,
-            //    MaxSynapsesPerSegment = (int)(0.02 * numColumns),
-
-            //    ActivationThreshold = 15,
-            //    ConnectedPermanence = 0.5,
-
-            //    // Learning is slower than forgetting in this case.
-            //    PermanenceDecrement = 0.25,
-            //    PermanenceIncrement = 0.15,
-
-            //    // Used by punishing of segments.
-            //    PredictedSegmentDecrement = 0.1
-            //};
-
-            //// IMAGE ENCODER
-            //ImageEncoder imgEncoder = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
-            //{
-            //    Inverse = false,
-            //    ImageHeight = 16,
-            //    ImageWidth = 16,
-            //    GreyScale = true,
-            //});
-
-            //ImageEncoder imgEncoder2 = new(new Daenet.ImageBinarizerLib.Entities.BinarizerParams()
-            //{
-            //    Inverse = false,
-            //    ImageHeight = 16,
-            //    ImageWidth = 16,
-            //    GreyScale = true,
-            //});
-
             #endregion
 
             #region Run experiment
-            //var mem = new Connections(cfg);
-
-            //bool isInStableState = false;
-
             HtmClassifier<string, ComputeCycle> cls = new HtmClassifier<string, ComputeCycle>();
 
             var numUniqueInputs = trainingSamples.Count;
-
-            //CortexLayer<object, object> layer1 = new CortexLayer<object, object>("L1");
-            //CortexLayer<object, object> layer2 = new CortexLayer<object, object>("L2");
-
-            // For more information see following paper: https://www.scitepress.org/Papers/2021/103142/103142.pdf
-            //HomeostaticPlasticityController hpc = new HomeostaticPlasticityController(mem, numUniqueInputs * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
-            //{
-            //    if (isStable)
-            //        // Event should be fired when entering the stable state.
-            //        Debug.WriteLine($"STABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
-            //    else
-            //        // Ideal SP should never enter unstable state after stable state.
-            //        Debug.WriteLine($"INSTABLE: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
-
-            //    // We are not learning in instable state.
-            //    isInStableState = isStable;
-
-            //    // Clear active and predictive cells.
-            //    //tm.Reset(mem);
-            //}, numOfCyclesToWaitOnChange: 50);
 
             LearningUnit learningUnit1 = new LearningUnit(16, 16, numColumns, "placeholder");
             LearningUnit learningUnit2 = new LearningUnit(32, 32, numColumns*4, "placeholder");
             learningUnit1.TrainingNewbornCycle(trainingSet);
             learningUnit2.TrainingNewbornCycle(trainingBigSet);
-            //SpatialPooler sp1 = new SpatialPooler(hpc);
-            //SpatialPooler sp2 = new SpatialPooler(hpc);
-            //sp1.Init(mem);
-            //sp2.Init(mem);
-            ////tm.Init(mem);
-
-            //layer1.HtmModules.Add("encoder1", imgEncoder);
-            //layer1.HtmModules.Add("sp1", sp1);
-
-            //layer2.HtmModules.Add("encoder2", imgEncoder2);
-            //layer2.HtmModules.Add("sp2", sp2);
-
-            ////double[] inputs = inputValues.ToArray();
-            //int[] prevActiveCols = new int[0];
-
-            //int cycle = 0;
-
-            //var lastPredictedValues = new List<string>(new string[] { "0" });
-
-            //int maxCycles = 1000;
-
-            ////
-            //// Training SP to get stable. New-born stage.
-            //Stopwatch sw = Stopwatch.StartNew();
-            //sw.Start();
-            //for (int i = 0; i < maxCycles /*&& isInStableState == false*/; i++)
-            //{
-            //    Debug.WriteLine($"-------------- Newborn Cycle {cycle} ---------------");
-
-            //    foreach (var trainingSample in trainingSamples)
-            //    {
-            //        var lyrOut1 = layer1.Compute(trainingSample.FramePath, true);
-            //        //var activeColumns = layer1.GetResult("sp") as int[];
-            //    }
-            //    foreach (var mnistSample in mnistSamples)
-            //    {
-            //        var lyrOut2 = layer2.Compute(mnistSample.FramePath, true);
-            //    }
-            //    if (isInStableState)
-            //    {
-            //        sw.Stop();
-            //        var elapsedTime = sw.Elapsed;            
-            //        break;
-            //    }
-            //    cycle++;
-            //}
 
             //
             // Add the stable SDRs to samples.
@@ -501,61 +366,6 @@ namespace InvariantLearning_FrameCheck
                         var savePath = Path.Combine(itemFolderPath, $"{testImage.Label}.png");
                         testImage.SaveTo(savePath, chosenFrame, true);
                     }
-
-                    //foreach (var obj in predictedObj)
-                    //{
-                    //    var frame = obj.Position;
-                    //    var testImages = scaledTestSet.Images.Where(x => x.Label == item.Key).ToList();
-                    //    double minDensity = 50.0;
-                    //    Image chosenImage = testImages.FirstOrDefault();
-                    //    string savePath = "";
-                    //    restart:
-                    //    foreach (var testImage in testImages)
-                    //    {
-                    //        double whitePixelDensity = testImage.FrameDensity(frame, minDensity);
-                    //        if (whitePixelDensity >= bestPixelDensity && whitePixelDensity >= minDensity)
-                    //        {
-                    //            bestPixelDensity = whitePixelDensity;
-                    //            chosenImage = testImage;
-                    //            savePath = Path.Combine(itemFolderPath, $"{obj.Object}_{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
-                    //        }
-                    //        if ((testImage == testImages.Last()) && (string.IsNullOrEmpty(savePath)))
-                    //        {
-                    //            minDensity -= 2;
-                    //            if (minDensity < 10)
-                    //            {
-                    //                break;
-                    //            }
-                    //            goto restart;
-                    //        }
-
-                    //        //if (testImage.IsRegionInDensityRange(frame, minDensity, 80))
-                    //        //{
-                    //        //    chosenImage = testImage;
-                    //        //    //string toBeSearched = $"\\{item.Key}\\";
-                    //        //    //string extension = ".png";
-                    //        //    savePath = Path.Combine(itemFolderPath/*, testImage.ImagePath.Substring(testImage.ImagePath.IndexOf(toBeSearched) + toBeSearched.Length, testImage.ImagePath.Length - (testImage.ImagePath.IndexOf(extension) + extension.Length - 1))*/, $"{obj.Object}_{frame.tlX}_{frame.tlY}_{frame.brX}_{frame.brY}.png");
-                    //        //}
-                    //        //if ((testImage == testImages.Last()) && (string.IsNullOrEmpty(savePath)))
-                    //        //{
-                    //        //    minDensity -= 2;
-                    //        //    if (minDensity < 10)
-                    //        //    {
-                    //        //        break;
-                    //        //    }
-                    //        //    goto restart;
-                    //        //}
-                    //        //if(!string.IsNullOrEmpty(savePath))
-                    //        //{
-                    //        //    testImage.SaveTo(savePath, frame, true);
-                    //        //}
-                    //    }
-                        //if (!string.IsNullOrEmpty(savePath))
-
-                        //{
-                        //    chosenImage.SaveTo(savePath, frame, true);
-                        //}
-                    //}
                     
                     var savePathList = Directory.GetFiles(itemFolderPath).ToList();
                     List<string> results = new List<string>();
@@ -633,261 +443,5 @@ namespace InvariantLearning_FrameCheck
             }
             hpc.TraceState();
         }
-
-        /// <summary>
-        /// SP of different sizes create SDR from images, this test checks the sparsity of the 2 patterns to see if bigger numCol ~ larger different from a pair
-        /// </summary>
-        /// <param name="outFolder"></param>
-        //private static void LocaDimensionTest(string outFolder)
-        //{
-        //    List<LearningUnit> sps = new List<LearningUnit>();
-        //    List<int> spDim = new List<int> { 28, 50 };
-        //    foreach (var dim in spDim)
-        //    {
-        //        sps.Add(new LearningUnit(dim, dim, 1024, outFolder));
-        //    }
-
-
-        //    Image four = new Image(Path.Combine("LocalDimensionTest", "4.png"), "4");
-        //    Image nine = new Image(Path.Combine("LocalDimensionTest", "9.png"), "9");
-
-        //    DataSet training = new DataSet(new List<Image> { four, nine });
-
-        //    foreach (var sp in sps)
-        //    {
-        //        sp.TrainingNewbornCycle(training);
-        //        sp.TrainingNormal(training, 50);
-
-        //        string similarityPath = Path.Combine("LocalDimensionTest_Res", $"SimilaritiesCalc__{sp.Id}");
-        //        Utility.CreateFolderIfNotExist(similarityPath);
-
-        //        var a = sp.classifier.TraceCrossSimilarity("4", "9");
-        //        var j = sp.classifier.TraceCrossSimilarity("4", "9");
-        //    }
-        //}
-
-        //private static void ExperimentEvaluatateImageClassification(string outFolder)
-        //{
-        //    // reading Config from json
-        //    var config = Utility.ReadConfig("experimentParams.json");
-        //    Utility.CreateFolderIfNotExist(config.ExperimentFolder);
-        //    string pathToTrainDataFolder = config.PathToTrainDataFolder;
-        //    string pathToTestDataFolder = config.PathToTestDataFolder;
-
-        //    Mnist.DataGen("MnistDataset", Path.Combine(config.ExperimentFolder, pathToTrainDataFolder), 10);
-
-        //    Utility.CreateFolderIfNotExist(Path.Combine(config.ExperimentFolder, pathToTrainDataFolder));
-        //    DataSet trainingData = new DataSet(Path.Combine(config.ExperimentFolder, pathToTrainDataFolder));
-
-        //    Utility.CreateFolderIfNotExist(Path.Combine(config.ExperimentFolder, pathToTestDataFolder));
-        //    DataSet testingData = trainingData.GetTestData(10);
-        //    testingData.VisualizeSet(Path.Combine(config.ExperimentFolder, pathToTestDataFolder));
-
-        //    LearningUnit sp = new(40, 40, 1024, outFolder);
-
-        //    sp.TrainingNewbornCycle(trainingData);
-
-        //    sp.TrainingNormal(trainingData, config.runParams.Epoch);
-
-        //    var allResult = new List<Dictionary<string, string>>();
-
-        //    foreach (var testingImage in testingData.Images)
-        //    {
-        //        Utility.CreateFolderIfNotExist("TestResult");
-        //        var res = sp.PredictScaledImage(testingImage, Path.Combine(config.ExperimentFolder, "TestResult"));
-        //        res.Add("fileName", $"{testingImage.Label}_{Path.GetFileName(testingImage.ImagePath)}");
-        //        res.Add("CorrectLabel", testingImage.Label);
-        //        allResult.Add(res);
-        //    }
-        //    Utility.WriteListToCsv(Path.Combine(config.ExperimentFolder, "TestResult", "testOutput"), allResult);
-        //    Utility.WriteListToOutputFile(Path.Combine(config.ExperimentFolder, "TestResult", "testOutput"), allResult);
-
-        //    var a = sp.classifier.RenderCorrelationMatrixToCSVFormat();
-        //    File.WriteAllLines(Path.Combine(config.ExperimentFolder, "correlationMat.csv"), a);
-
-        //    string similarityPath = Path.Combine(config.ExperimentFolder, "SimilaritiesCalc");
-        //    Utility.CreateFolderIfNotExist(similarityPath);
-
-        //}
-
-        private static void ExperimentNormalImageClassification()
-        {
-            // reading Config from json
-            var config = Utility.ReadConfig("experimentParams.json");
-            string pathToTrainDataFolder = config.PathToTrainDataFolder;
-
-            //Mnist.DataGenAll("MnistDataset", "TrainingFolder");
-            Mnist.DataGen("MnistDataset", "TrainingFolder", 10);
-
-            List<DataSet> testingData = new List<DataSet>();
-            List<DataSet> trainingData = new List<DataSet>();
-
-            DataSet originalTrainingDataSet = new DataSet(pathToTrainDataFolder);
-
-            int k = 5;
-
-            (trainingData, testingData) = originalTrainingDataSet.KFoldDataSetSplitEvenly(k);
-
-            ConcurrentDictionary<string, double> foldValidationResult = new ConcurrentDictionary<string, double>();
-
-            Parallel.For(0, k, (i) =>
-            //for (int i = 0; i < k; i += 1)
-            {
-                // Visualizing data in k-fold scenarios
-                string setPath = $"DatasetFold{i}";
-                string trainSetPath = Path.Combine(setPath, "TrainingData");
-                Utility.CreateFolderIfNotExist(trainSetPath);
-                trainingData[i].VisualizeSet(trainSetPath);
-
-                string testSetPath = Path.Combine(setPath, "TestingData");
-                Utility.CreateFolderIfNotExist(trainSetPath);
-                testingData[i].VisualizeSet(testSetPath);
-
-                // passing the training data to the training experiment
-                InvariantExperimentImageClassification experiment = new(trainingData[i], config.runParams);
-
-                // train the network
-                experiment.Train(false);
-
-                // Prediction phase
-                Utility.CreateFolderIfNotExist($"Predict_{i}");
-
-                List<string> currentResList = new List<string>();
-
-                Dictionary<string, List<Dictionary<string, string>>> allResult = new Dictionary<string, List<Dictionary<string, string>>>();
-
-                foreach (var testImage in testingData[i].Images)
-                {
-                    var result = experiment.Predict(testImage, i.ToString());
-
-                    string testImageID = $"{testImage.Label}_{Path.GetFileNameWithoutExtension(testImage.ImagePath)}";
-                    UpdateResult(ref allResult, testImageID, result);
-                }
-                double foldValidationAccuracy = CalculateAccuracy(allResult);
-
-                foreach (var sp in allResult)
-                {
-                    string path = Path.Combine($"Predict_{i}", sp.Key);
-                    Utility.WriteListToCsv(path, allResult[sp.Key]);
-                }
-
-                foldValidationResult.TryAdd($"Fold_{i}_accuracy", foldValidationAccuracy);
-            });
-            Utility.WriteResultOfOneSP(new Dictionary<string, double>(foldValidationResult), $"KFold_{k}_Validation_Result");
-        }
-
-        /// <summary>
-        /// Calculate by averaging similarity prediction of the correct label
-        /// </summary>
-        /// <param name="allResult"></param>
-        /// <returns></returns>
-        private static double CalculateAccuracy(Dictionary<string, List<Dictionary<string, string>>> allResult)
-        {
-            List<double> spAccuracy = new List<double>();
-
-            foreach (var spResult in allResult.Values)
-            {
-                List<double> similarityList = new List<double>();
-                foreach (var imagePredictResult in spResult)
-                {
-                    if (imagePredictResult.ContainsKey(imagePredictResult["CorrectLabel"]))
-                    {
-                        similarityList.Add(Double.Parse(imagePredictResult[imagePredictResult["CorrectLabel"]]));
-                    }
-                    else
-                    {
-                        similarityList.Add(0.0);
-                    }
-                }
-                spAccuracy.Add(similarityList.Average());
-            }
-            return spAccuracy.Average();
-        }
-
-        private static void UpdateResult(ref Dictionary<string, List<Dictionary<string, string>>> allResult, string testImageID, Dictionary<string, Dictionary<string, string>> result)
-        {
-            foreach (var spKey in result.Keys)
-            {
-                if (!allResult.ContainsKey(spKey))
-                {
-                    allResult.Add(spKey, new List<Dictionary<string, string>>());
-                }
-            }
-
-            foreach (var spKey in allResult.Keys)
-            {
-                Dictionary<string, string> resultEntryOfOneSP = new Dictionary<string, string>();
-                resultEntryOfOneSP.Add("fileName", testImageID);
-                foreach (var labelPred in result[spKey])
-                {
-                    resultEntryOfOneSP.Add(labelPred.Key, labelPred.Value);
-                }
-                allResult[spKey].Add(resultEntryOfOneSP);
-            }
-        }
-
-        /*
-private static void ExperimentPredictingWithFrameGrid()
-{
-   // populate the training and testing dataset with Mnist DataGen
-   Mnist.DataGen("MnistDataset", "TrainingFolder", 5);
-   Mnist.TestDataGen("MnistDataset", "TestingFolder", 5);
-
-   // reading Config from json
-   var config = Utility.ReadConfig("experimentParams.json");
-   string pathToTrainDataFolder = config.PathToTrainDataFolder;
-   string pathToTestDataFolder = config.PathToTestDataFolder;
-
-   // generate the training data
-   DataSet trainingSet = new DataSet(pathToTrainDataFolder);
-
-   // generate the testing data
-   DataSet testingSet = new DataSet(pathToTestDataFolder);
-
-   // passing the training data to the training experiment
-   InvariantExperimentImageClassification experiment = new(trainingSet, config.runParams);
-
-   // train the network
-   experiment.Train(true);
-
-
-   // using predict to classify image from dataset
-   Utility.CreateFolderIfNotExist("Predict");
-   List<string> currentResList = new List<string>();
-   /*
-   CancellationToken cancelToken = new CancellationToken();
-   while (true)
-   {
-       if (cancelToken.IsCancellationRequested)
-       {
-           return;
-       }
-       // This can be later changed to the validation test
-       var result = experiment.Predict(testingSet.PickRandom());
-       Debug.WriteLine($"predicted as {result.Item1}, correct label: {result.Item2}");
-
-
-       double accuracy = Utility.AccuracyCal(currentResList);
-       currentResList.Add($"{result.Item1}_{result.Item2}");
-       Utility.WriteOutputToFile(Path.Combine("Predict", "PredictionOutput"),result);
-   }
-
-
-
-   foreach (var testImage in testingSet.Images)
-   {
-       var result = experiment.Predict(testImage);
-
-       Debug.WriteLine($"predicted as {result.Item1}, correct label: {result.Item2}");
-
-       double accuracy = Utility.AccuracyCal(currentResList);
-
-       currentResList.Add($"{result.Item1}_{result.Item2}");
-
-       Utility.WriteOutputToFile(Path.Combine("Predict", $"{Utility.GetHash()}_____PredictionOutput of testImage label {testImage.label}"), result);
-   }
-
-}
-*/
     }
 }
